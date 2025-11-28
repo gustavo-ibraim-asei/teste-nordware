@@ -637,6 +637,803 @@
 			]
 		},
 		{
+			"name": "Stock Management",
+			"item": [
+				{
+					"name": "Stock Offices",
+					"item": [
+						{
+							"name": "Get All Stock Offices",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/stockoffices",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stockoffices"]
+								}
+							}
+						},
+						{
+							"name": "Get Stock Office by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/stockoffices/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stockoffices", "1"]
+								}
+							}
+						},
+						{
+							"name": "Create Stock Office",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Filial Centro\",\n    \"code\": \"CENTRO\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/stockoffices",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stockoffices"]
+								}
+							}
+						},
+						{
+							"name": "Update Stock Office",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Filial Centro Atualizada\",\n    \"code\": \"CENTRO\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/stockoffices/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stockoffices", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Stock Office",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/stockoffices/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stockoffices", "1"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Colors",
+					"item": [
+						{
+							"name": "Get All Colors",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/colors",
+									"host": ["{{base_url}}"],
+									"path": ["api", "colors"]
+								}
+							}
+						},
+						{
+							"name": "Create Color",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Rosa\",\n    \"code\": \"PINK\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/colors",
+									"host": ["{{base_url}}"],
+									"path": ["api", "colors"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Sizes",
+					"item": [
+						{
+							"name": "Get All Sizes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/sizes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "sizes"]
+								}
+							}
+						},
+						{
+							"name": "Create Size",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"XXG\",\n    \"code\": \"XXG\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/sizes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "sizes"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Products",
+					"item": [
+						{
+							"name": "Get All Products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/products",
+									"host": ["{{base_url}}"],
+									"path": ["api", "products"]
+								},
+								"description": "Lista todos os produtos cadastrados"
+							}
+						},
+						{
+							"name": "Get Product by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/products/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "products", "1"]
+								},
+								"description": "Obtém um produto específico por ID"
+							}
+						},
+						{
+							"name": "Create Product",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Camiseta Básica\",\n    \"code\": \"CAM001\",\n    \"description\": \"Camiseta básica de algodão\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/products",
+									"host": ["{{base_url}}"],
+									"path": ["api", "products"]
+								},
+								"description": "Cria um novo produto. Code é obrigatório."
+							}
+						},
+						{
+							"name": "Update Product",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Camiseta Básica Atualizada\",\n    \"code\": \"CAM001\",\n    \"description\": \"Camiseta básica de algodão premium\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/products/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "products", "1"]
+								},
+								"description": "Atualiza um produto existente"
+							}
+						},
+						{
+							"name": "Delete Product",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/products/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "products", "1"]
+								},
+								"description": "Exclui um produto (não pode excluir se houver SKUs associados)"
+							}
+						}
+					]
+				},
+				{
+					"name": "SKUs",
+					"item": [
+						{
+							"name": "Get All SKUs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/skus",
+									"host": ["{{base_url}}"],
+									"path": ["api", "skus"]
+								}
+							}
+						},
+						{
+							"name": "Get SKUs by Product",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/skus?productId=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "skus"],
+									"query": [
+										{
+											"key": "productId",
+											"value": "1"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create SKU",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"productId\": 1,\n    \"colorId\": 1,\n    \"sizeId\": 1\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/skus",
+									"host": ["{{base_url}}"],
+									"path": ["api", "skus"]
+								},
+								"description": "Cria um novo SKU (combinação de Produto + Cor + Tamanho). SkuCode e Barcode são gerados automaticamente no formato EAN-13."
+							}
+						},
+						{
+							"name": "Get SKUs with Stock",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/skus/with-stock",
+									"host": ["{{base_url}}"],
+									"path": ["api", "skus", "with-stock"]
+								},
+								"description": "Lista apenas SKUs que possuem estoque disponível, incluindo informações de quantidade e filiais"
+							}
+						}
+					]
+				},
+				{
+					"name": "Stocks",
+					"item": [
+						{
+							"name": "Get All Stocks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/stocks",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stocks"]
+								}
+							}
+						},
+						{
+							"name": "Get Stocks by SKU",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/stocks?skuId=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stocks"],
+									"query": [
+										{
+											"key": "skuId",
+											"value": "1"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Stock",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"skuId\": 1,\n    \"stockOfficeId\": 1,\n    \"quantity\": 100\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/stocks",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stocks"]
+								}
+							}
+						},
+						{
+							"name": "Decrease Stock",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"quantity\": 5\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/stocks/1/decrease",
+									"host": ["{{base_url}}"],
+									"path": ["api", "stocks", "1", "decrease"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Price Tables",
+					"item": [
+						{
+							"name": "Get All Price Tables",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/pricetables?onlyActive=true",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pricetables"],
+									"query": [
+										{
+											"key": "onlyActive",
+											"value": "true",
+											"disabled": true
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Price Table",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Tabela Padrão\",\n    \"description\": \"Tabela de preços padrão\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/pricetables",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pricetables"]
+								}
+							}
+						},
+						{
+							"name": "Get Price Table by ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/pricetables/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pricetables", "1"]
+								}
+							}
+						},
+						{
+							"name": "Update Price Table",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Tabela Atualizada\",\n    \"description\": \"Nova descrição\",\n    \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/pricetables/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pricetables", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Price Table",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/pricetables/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pricetables", "1"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Product Prices",
+					"item": [
+						{
+							"name": "Get All Product Prices",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/productprices?productId=1&priceTableId=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "productprices"],
+									"query": [
+										{
+											"key": "productId",
+											"value": "1",
+											"disabled": true
+										},
+										{
+											"key": "priceTableId",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Product Price",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"productId\": 1,\n    \"priceTableId\": 1,\n    \"unitPrice\": 99.99\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/productprices",
+									"host": ["{{base_url}}"],
+									"path": ["api", "productprices"]
+								}
+							}
+						},
+						{
+							"name": "Get Product Price by ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/productprices/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "productprices", "1"]
+								}
+							}
+						},
+						{
+							"name": "Update Product Price",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"unitPrice\": 149.99\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/productprices/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "productprices", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Product Price",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/productprices/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "productprices", "1"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Customers",
+					"item": [
+						{
+							"name": "Get All Customers",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/customers?name=João&email=joao@example.com",
+									"host": ["{{base_url}}"],
+									"path": ["api", "customers"],
+									"query": [
+										{
+											"key": "name",
+											"value": "João",
+											"disabled": true
+										},
+										{
+											"key": "email",
+											"value": "joao@example.com",
+											"disabled": true
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Customer",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"João Silva\",\n    \"email\": \"joao.silva@example.com\",\n    \"phone\": \"(11) 98765-4321\",\n    \"document\": \"123.456.789-00\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/customers",
+									"host": ["{{base_url}}"],
+									"path": ["api", "customers"]
+								}
+							}
+						},
+						{
+							"name": "Get Customer by ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/customers/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "customers", "1"]
+								}
+							}
+						},
+						{
+							"name": "Update Customer",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"João Silva Santos\",\n    \"email\": \"joao.silva@example.com\",\n    \"phone\": \"(11) 98765-4321\",\n    \"document\": \"123.456.789-00\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/customers/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "customers", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Customer",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-Tenant-Id",
+										"value": "{{tenant_id}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/customers/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "customers", "1"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Orders with Stock",
+					"item": [
+						{
+							"name": "Create Order (with stock validation)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        {\n            \"productId\": 1,\n            \"colorId\": 1,\n            \"sizeId\": 1,\n            \"productName\": \"Camiseta Básica\",\n            \"quantity\": 2,\n            \"unitPrice\": 29.90\n        }\n    ],\n    \"shippingAddress\": {\n        \"street\": \"Rua Exemplo\",\n        \"number\": \"123\",\n        \"complement\": \"Apto 45\",\n        \"neighborhood\": \"Centro\",\n        \"city\": \"São Paulo\",\n        \"state\": \"SP\",\n        \"zipCode\": \"01310-100\"\n    }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/orders",
+									"host": ["{{base_url}}"],
+									"path": ["api", "orders"]
+								},
+								"description": "Cria um pedido com validação automática de estoque. O sistema seleciona automaticamente a filial com estoque disponível."
+							}
+						},
+						{
+							"name": "Complete Order (stock decrease)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"carrierId\": 1,\n    \"shippingTypeId\": 1\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/orders/{{order_id}}/complete",
+									"host": ["{{base_url}}"],
+									"path": ["api", "orders", "{{order_id}}", "complete"]
+								},
+								"description": "Finaliza um pedido e efetua a baixa de estoque de forma atômica."
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Health Checks",
 			"item": [
 				{

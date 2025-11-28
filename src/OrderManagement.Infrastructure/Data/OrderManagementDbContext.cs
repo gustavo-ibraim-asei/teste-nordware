@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Domain.Entities;
 using OrderManagement.Domain.ValueObjects;
 using OrderManagement.Infrastructure.Configurations;
-using OrderManagement.Infrastructure.Multitenancy;
 
 namespace OrderManagement.Infrastructure.Data;
 
@@ -27,6 +27,17 @@ public class OrderManagementDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
+    
+    // Stock entities
+    public DbSet<Product> Products { get; set; }
+    public DbSet<StockOffice> StockOffices { get; set; }
+    public DbSet<Color> Colors { get; set; }
+    public DbSet<Size> Sizes { get; set; }
+    public DbSet<Sku> Skus { get; set; }
+    public DbSet<Stock> Stocks { get; set; }
+    public DbSet<PriceTable> PriceTables { get; set; }
+    public DbSet<ProductPrice> ProductPrices { get; set; }
+    public DbSet<Customer> Customers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +48,17 @@ public class OrderManagementDbContext : DbContext
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
+        
+        // Stock configurations
+        modelBuilder.ApplyConfiguration(new ProductConfiguration());
+        modelBuilder.ApplyConfiguration(new StockOfficeConfiguration());
+        modelBuilder.ApplyConfiguration(new ColorConfiguration());
+        modelBuilder.ApplyConfiguration(new SizeConfiguration());
+        modelBuilder.ApplyConfiguration(new SkuConfiguration());
+        modelBuilder.ApplyConfiguration(new StockConfiguration());
+        modelBuilder.ApplyConfiguration(new PriceTableConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductPriceConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerConfiguration());
 
         // Configure ProcessedMessage
         modelBuilder.Entity<ProcessedMessage>(entity =>
@@ -65,6 +87,12 @@ public class OrderManagementDbContext : DbContext
             // Global filter for multitenancy
             entity.HasQueryFilter(o => o.TenantId == (_tenantProvider != null ? _tenantProvider.GetCurrentTenant() : "default"));
         });
+
+        // Global filter for OrderItem (multitenancy)
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasQueryFilter(i => i.TenantId == (_tenantProvider != null ? _tenantProvider.GetCurrentTenant() : "default"));
+        });
     }
 
     public override int SaveChanges()
@@ -89,7 +117,12 @@ public class OrderManagementDbContext : DbContext
         {
             if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Added)
             {
-                entry.Entity.TenantId = tenantId;
+                // Usar reflection para setar TenantId (propriedade protected)
+                System.Reflection.PropertyInfo? property = typeof(BaseEntity).GetProperty("TenantId", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (property != null && string.IsNullOrEmpty(entry.Entity.TenantId))
+                {
+                    property.SetValue(entry.Entity, tenantId);
+                }
             }
         }
     }

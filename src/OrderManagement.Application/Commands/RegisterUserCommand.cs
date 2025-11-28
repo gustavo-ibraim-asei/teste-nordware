@@ -9,3 +9,6 @@ public class RegisterUserCommand : IRequest<AuthResultDto>
 }
 
 
+
+
+

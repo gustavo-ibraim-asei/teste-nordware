@@ -4,13 +4,17 @@ public class OrderItem : BaseEntity
 {
     public int OrderId { get; private set; }
     public int ProductId { get; private set; }
+    public int? SkuId { get; private set; }
+    public int? StockOfficeId { get; private set; }
     public string ProductName { get; private set; } = string.Empty;
     public int Quantity { get; private set; }
     public decimal UnitPrice { get; private set; }
     public decimal Subtotal { get; private set; }
 
-    // Navigation property
+    // Navigation properties
     public virtual Order Order { get; private set; } = null!;
+    public virtual Sku? Sku { get; private set; }
+    public virtual StockOffice? StockOffice { get; private set; }
 
     private OrderItem() { } // EF Core
 
@@ -42,6 +46,18 @@ public class OrderItem : BaseEntity
 
         Quantity = newQuantity;
         Subtotal = Quantity * UnitPrice;
+    }
+
+    public void SetStockInfo(int skuId, int stockOfficeId)
+    {
+        if (skuId <= 0)
+            throw new ArgumentException("SkuId must be greater than zero", nameof(skuId));
+
+        if (stockOfficeId <= 0)
+            throw new ArgumentException("StockOfficeId must be greater than zero", nameof(stockOfficeId));
+
+        SkuId = skuId;
+        StockOfficeId = stockOfficeId;
     }
 }
 

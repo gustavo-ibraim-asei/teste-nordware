@@ -5,9 +5,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
+using OrderManagement.Application.Interfaces;
+
 namespace OrderManagement.API.Services;
 
-public class JwtService
+public class JwtService : IJwtService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<JwtService> _logger;

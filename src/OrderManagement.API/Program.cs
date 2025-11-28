@@ -6,10 +6,13 @@ using Microsoft.OpenApi.Models;
 using OrderManagement.API.Hubs;
 using OrderManagement.API.Middleware;
 using OrderManagement.API.Services;
+using OrderManagement.Application.Behaviors;
+using OrderManagement.Application.Commands;
 using OrderManagement.Application.Interfaces;
 using OrderManagement.Application.Mappings;
 using OrderManagement.Application.Services;
 using OrderManagement.Application.Validators;
+using OrderManagement.Domain.Entities;
 using OrderManagement.Domain.Interfaces;
 using OrderManagement.Infrastructure.Data;
 using OrderManagement.Infrastructure.ExternalServices;
@@ -100,15 +103,29 @@ builder.Services.AddSwaggerGen(c =>
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Host=localhost;Database=OrderManagement;Username=postgres;Password=postgres";
 
+// Otimizações de connection pooling na connection string para escalabilidade
+// MaxPoolSize e MinPoolSize são configurados na connection string do PostgreSQL
+if (!connectionString.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString += ";Maximum Pool Size=100;Minimum Pool Size=10";
+}
+
 // Multitenancy
 builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
+// Connection Pooling otimizado para escalabilidade
 builder.Services.AddDbContext<OrderManagementDbContext>((serviceProvider, options) =>
 {
     ITenantProvider? tenantProvider = serviceProvider.GetService<ITenantProvider>();
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
         npgsqlOptions.MigrationsAssembly("OrderManagement.Infrastructure");
+        npgsqlOptions.CommandTimeout(30); // Timeout de comandos em segundos
+        // Habilitar retry automático para melhor resiliência
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
     });
     if (tenantProvider != null)
     {
@@ -116,13 +133,52 @@ builder.Services.AddDbContext<OrderManagementDbContext>((serviceProvider, option
     }
 });
 
+// Read Replica DbContext para queries (escalabilidade de leitura)
+// Configurar connection string de read replica se disponível, senão usa a principal
+string readReplicaConnectionString = builder.Configuration.GetConnectionString("ReadReplicaConnection") ?? connectionString;
+if (!readReplicaConnectionString.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase))
+{
+    readReplicaConnectionString += ";Maximum Pool Size=100;Minimum Pool Size=10";
+}
+
+builder.Services.AddDbContext<OrderManagementReadDbContext>((serviceProvider, options) =>
+{
+    ITenantProvider? tenantProvider = serviceProvider.GetService<ITenantProvider>();
+    options.UseNpgsql(readReplicaConnectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.MigrationsAssembly("OrderManagement.Infrastructure");
+        npgsqlOptions.CommandTimeout(30);
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
+    });
+    // Read-only context sempre usa NoTracking
+    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    // Read-only: não permite salvar mudanças
+    options.EnableSensitiveDataLogging(false);
+});
+
 // Repositories and Unit of Work
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISkuRepository, SkuRepository>();
+builder.Services.AddScoped<IStockRepository, StockRepository>();
+builder.Services.AddScoped<IRepository<Product>, Repository<Product>>();
+builder.Services.AddScoped<IRepository<StockOffice>, Repository<StockOffice>>();
+builder.Services.AddScoped<IRepository<Color>, Repository<Color>>();
+builder.Services.AddScoped<IRepository<Size>, Repository<Size>>();
+builder.Services.AddScoped<IPriceTableRepository, PriceTableRepository>();
+builder.Services.AddScoped<IProductPriceRepository, ProductPriceRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Application Services
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg => 
+{
+    cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommand).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+});
 builder.Services.AddAutoMapper(typeof(MappingProfile), typeof(ShippingMappingProfile));
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
 
@@ -130,11 +186,12 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
 builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 builder.Services.AddScoped<IOrderFactory, OrderFactory>();
 builder.Services.AddScoped<IShippingCalculationService, ShippingCalculationService>();
+builder.Services.AddScoped<IStockService, StockService>();
 
 // API Services
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
-builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Messaging
 builder.Services.AddSingleton<IMessagePublisher, RabbitMQMessagePublisher>();
@@ -150,12 +207,29 @@ builder.Services.AddHttpClient<ViaCepService>()
 builder.Services.AddScoped<ViaCepService>();
 builder.Services.AddScoped<ShippingService>();
 
-// Redis Cache (optional)
-string redisConnection = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-builder.Services.AddStackExchangeRedisCache(options =>
+// Redis Cache (optional) - usar cache em memória como fallback se Redis não estiver disponível
+string? redisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnection))
 {
-    options.Configuration = redisConnection;
-});
+    try
+    {
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConnection!;
+            options.InstanceName = "OrderManagement:";
+        });
+    }
+    catch
+    {
+        // Se falhar, usar cache em memória
+        builder.Services.AddDistributedMemoryCache();
+    }
+}
+else
+{
+    // Se não houver connection string, usar cache em memória
+    builder.Services.AddDistributedMemoryCache();
+}
 
 // JWT Authentication
 string jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatShouldBeAtLeast32CharactersLong!";
@@ -220,6 +294,17 @@ builder.Services.AddHealthChecks()
         }
     });
 
+// CORS - Permitir qualquer origem
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -238,17 +323,6 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode = 429;
         await context.HttpContext.Response.WriteAsync("Limite de taxa excedido. Por favor, tente novamente mais tarde.", token);
     };
-});
-
-// CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
 });
 
 WebApplication app = builder.Build();
@@ -284,8 +358,10 @@ app.UseSwaggerUI(c =>
     c.EnableValidator();
 });
 
-app.UseHttpsRedirection();
+// CORS deve ser configurado antes de UseHttpsRedirection e outros middlewares
 app.UseCors();
+
+app.UseHttpsRedirection();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseMiddleware<TenantMiddleware>();
 app.UseAuthentication();

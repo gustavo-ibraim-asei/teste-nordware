@@ -43,3 +43,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 ENTRYPOINT ["dotnet", "OrderManagement.API.dll"]
 
 
+
+
+

@@ -1,10 +1,10 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using OrderManagement.API.Services;
 using OrderManagement.Application.Commands;
 using OrderManagement.Application.DTOs;
 using OrderManagement.Application.Handlers;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Application.Services;
 using OrderManagement.Domain.Entities;
 using OrderManagement.Domain.Interfaces;
@@ -16,7 +16,7 @@ public class LoginCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
-    private readonly Mock<JwtService> _jwtServiceMock;
+    private readonly Mock<IJwtService> _jwtServiceMock;
     private readonly Mock<ILogger<LoginCommandHandler>> _loggerMock;
     private readonly LoginCommandHandler _handler;
 
@@ -24,14 +24,14 @@ public class LoginCommandHandlerTests
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
-        _jwtServiceMock = new Mock<JwtService>(Mock.Of<Microsoft.Extensions.Configuration.IConfiguration>(), Mock.Of<ILogger<JwtService>>());
+        _jwtServiceMock = new Mock<IJwtService>();
         _loggerMock = new Mock<ILogger<LoginCommandHandler>>();
 
         _handler = new LoginCommandHandler(
             _unitOfWorkMock.Object,
             _passwordHasherMock.Object,
-            _jwtServiceMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _jwtServiceMock.Object);
     }
 
     [Fact]
@@ -177,5 +177,6 @@ public class LoginCommandHandlerTests
             .WithMessage("Tenant incorreto");
     }
 }
+
 
 

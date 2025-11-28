@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using OrderManagement.API.Services;
 using OrderManagement.Application.Commands;
@@ -14,7 +13,6 @@ namespace OrderManagement.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[EnableRateLimiting("fixed")]
 [Authorize]
 public class OrdersController : ControllerBase
 {

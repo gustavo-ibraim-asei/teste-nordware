@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using OrderManagement.Application.Commands;
 using OrderManagement.Application.DTOs;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Application.Services;
 using OrderManagement.Domain.Interfaces;
 
@@ -12,9 +13,9 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<LoginCommandHandler> _logger;
-    private readonly JwtService _jwtService;
+    private readonly IJwtService _jwtService;
 
-    public LoginCommandHandler(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher, ILogger<LoginCommandHandler> logger, JwtService jwtService)
+    public LoginCommandHandler(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher, ILogger<LoginCommandHandler> logger, IJwtService jwtService)
     {
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;

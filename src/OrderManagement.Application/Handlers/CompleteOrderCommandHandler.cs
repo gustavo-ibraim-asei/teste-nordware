@@ -13,13 +13,15 @@ public class CompleteOrderCommandHandler : IRequestHandler<CompleteOrderCommand,
     private readonly IMapper _mapper;
     private readonly IDomainEventDispatcher _eventDispatcher;
     private readonly IShippingCalculationService _shippingService;
+    private readonly IStockService _stockService;
 
-    public CompleteOrderCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IDomainEventDispatcher eventDispatcher, IShippingCalculationService shippingService)
+    public CompleteOrderCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IDomainEventDispatcher eventDispatcher, IShippingCalculationService shippingService, IStockService stockService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _eventDispatcher = eventDispatcher;
         _shippingService = shippingService;
+        _stockService = stockService;
     }
 
     public async Task<OrderDto> Handle(CompleteOrderCommand request, CancellationToken cancellationToken)
@@ -36,9 +38,7 @@ public class CompleteOrderCommandHandler : IRequestHandler<CompleteOrderCommand,
         List<Domain.ValueObjects.ShippingOption> shippingOptions = await _shippingService.CalculateShippingOptionsAsync(order.ShippingAddress.ZipCode, order.TotalAmount, totalWeight, cancellationToken);
 
         // Buscar opção selecionada
-        Domain.ValueObjects.ShippingOption? selectedOption = shippingOptions.FirstOrDefault(o => 
-            o.CarrierId == request.ShippingInfo.CarrierId &&
-            o.ShippingTypeId == request.ShippingInfo.ShippingTypeId);
+        Domain.ValueObjects.ShippingOption? selectedOption = shippingOptions.FirstOrDefault(o => o.CarrierId == request.ShippingInfo.CarrierId && o.ShippingTypeId == request.ShippingInfo.ShippingTypeId);
 
         if (selectedOption == null)
             throw new ArgumentException("Opção de frete selecionada não encontrada ou não disponível");
@@ -46,10 +46,35 @@ public class CompleteOrderCommandHandler : IRequestHandler<CompleteOrderCommand,
         // Aplicar frete ao pedido
         order.SetShippingInfo(selectedOption.CarrierId, selectedOption.CarrierName, selectedOption.ShippingTypeId, selectedOption.ShippingType, selectedOption.Price, selectedOption.EstimatedDays);
 
-        // Atualizar status para Confirmed
-        order.UpdateStatus(Domain.Enums.OrderStatus.Confirmed);
+        // Iniciar transação para garantir atomicidade
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            // Baixar estoque para cada item do pedido
+            foreach (Domain.Entities.OrderItem item in order.Items)
+            {
+                if (item.SkuId.HasValue && item.StockOfficeId.HasValue)
+                {
+                    await _stockService.DecreaseStockAsync(
+                        item.SkuId.Value,
+                        item.StockOfficeId.Value,
+                        item.Quantity,
+                        cancellationToken);
+                }
+            }
+
+            // Atualizar status para Confirmed
+            order.UpdateStatus(Domain.Enums.OrderStatus.Confirmed);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
 
         // Dispatch domain events
         await _eventDispatcher.DispatchAsync(order.DomainEvents, cancellationToken);

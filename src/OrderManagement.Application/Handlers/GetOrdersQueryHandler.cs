@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using OrderManagement.Application.DTOs;
@@ -26,16 +27,23 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
 
     public async Task<PagedResultDto<OrderDto>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
     {
-        // Try to get from cache if available
+        // Try to get from cache if available (com tratamento de erro)
         if (_cache != null)
         {
-            string cacheKey = $"orders:{request.Query.CustomerId}:{request.Query.Status}:{request.Query.Page}:{request.Query.PageSize}";
-            string? cachedResult = await _cache.GetStringAsync(cacheKey, cancellationToken);
-
-            if (!string.IsNullOrEmpty(cachedResult))
+            try
             {
-                _logger?.LogDebug("Cache hit para consulta de pedidos");
-                return JsonSerializer.Deserialize<PagedResultDto<OrderDto>>(cachedResult)!;
+                string cacheKey = $"orders:{request.Query.CustomerId}:{request.Query.Status}:{request.Query.Page}:{request.Query.PageSize}";
+                string? cachedResult = await _cache.GetStringAsync(cacheKey, cancellationToken);
+
+                if (!string.IsNullOrEmpty(cachedResult))
+                {
+                    _logger?.LogDebug("Cache encontrado para consulta de pedidos");
+                    return JsonSerializer.Deserialize<PagedResultDto<OrderDto>>(cachedResult)!;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Erro ao acessar cache. Continuando sem cache.");
             }
         }
 
@@ -97,19 +105,26 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             PageSize = request.Query.PageSize
         };
 
-        // Cache result if cache is available
+        // Cache result if cache is available (com tratamento de erro)
         if (_cache != null)
         {
-            string cacheKey = $"orders:{request.Query.CustomerId}:{request.Query.Status}:{request.Query.Page}:{request.Query.PageSize}";
-            DistributedCacheEntryOptions cacheOptions = new DistributedCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            };
-            await _cache.SetStringAsync(
-                cacheKey,
-                JsonSerializer.Serialize(result),
-                cacheOptions,
-                cancellationToken);
+                string cacheKey = $"orders:{request.Query.CustomerId}:{request.Query.Status}:{request.Query.Page}:{request.Query.PageSize}";
+                DistributedCacheEntryOptions cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                };
+                await _cache.SetStringAsync(
+                    cacheKey,
+                    JsonSerializer.Serialize(result),
+                    cacheOptions,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Erro ao armazenar no cache. Continuando sem cache.");
+            }
         }
 
         return result;

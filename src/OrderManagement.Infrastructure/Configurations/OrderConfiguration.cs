@@ -57,6 +57,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(100);
 
         // Optimistic concurrency control
+        // Para PostgreSQL com Npgsql, usamos IsRowVersion que cria um trigger automático
         builder.Property(o => o.RowVersion)
             .IsRowVersion()
             .IsRequired();

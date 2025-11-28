@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
 import * as signalR from '@microsoft/signalr'
+import { API_BASE_URL, API_SIGNALR_URL } from '../config/api'
 
 export const useOrdersStore = defineStore('orders', () => {
   const orders = ref([])
@@ -14,7 +15,7 @@ export const useOrdersStore = defineStore('orders', () => {
     }
 
     connection.value = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5000/orderHub')
+      .withUrl(API_SIGNALR_URL)
       .withAutomaticReconnect()
       .build()
 
@@ -46,7 +47,7 @@ export const useOrdersStore = defineStore('orders', () => {
       if (filters.page) params.append('page', filters.page)
       if (filters.pageSize) params.append('pageSize', filters.pageSize)
 
-      const response = await axios.get(`http://localhost:5000/api/orders?${params}`)
+      const response = await axios.get(`${API_BASE_URL}/orders?${params}`)
       orders.value = response.data.items
       return response.data
     } catch (error) {
@@ -72,5 +73,8 @@ export const useOrdersStore = defineStore('orders', () => {
     disconnectSignalR
   }
 })
+
+
+
 
 

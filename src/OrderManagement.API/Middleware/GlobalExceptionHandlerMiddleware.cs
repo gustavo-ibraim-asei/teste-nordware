@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ public class GlobalExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Uma exceção não tratada ocorreu. RequestId: {RequestId}", context.TraceIdentifier);
+            _logger.LogError(ex, "Exceção não tratada ocorreu. RequestId: {RequestId}", context.TraceIdentifier);
             
             await HandleExceptionAsync(context, ex);
         }
@@ -83,6 +84,22 @@ public class GlobalExceptionHandlerMiddleware
                 {
                     error = "Conflito de Concorrência",
                     message = "O recurso foi modificado por outro processo. Por favor, atualize e tente novamente.",
+                    requestId = context.TraceIdentifier
+                });
+                break;
+
+            case ValidationException validationEx:
+                code = HttpStatusCode.BadRequest;
+                result = JsonSerializer.Serialize(new
+                {
+                    error = "Erro de Validação",
+                    message = "Os dados fornecidos são inválidos.",
+                    errors = validationEx.Errors.Select(e => new
+                    {
+                        property = e.PropertyName,
+                        message = e.ErrorMessage,
+                        attemptedValue = e.AttemptedValue
+                    }),
                     requestId = context.TraceIdentifier
                 });
                 break;

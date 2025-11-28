@@ -2,8 +2,9 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: order-management-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -17,16 +18,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:3-management
     container_name: order-management-rabbitmq
+    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -34,10 +37,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   redis:
-    image: redis:7-alpine
+    image: redis:7
     container_name: order-management-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -47,10 +52,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    command: redis-server --appendonly yes
 
 volumes:
   postgres_data:
   rabbitmq_data:
   redis_data:
 
-
+networks:
+  default:
+    name: order-management-network

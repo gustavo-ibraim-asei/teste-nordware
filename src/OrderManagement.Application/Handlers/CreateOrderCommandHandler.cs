@@ -2,9 +2,10 @@ using AutoMapper;
 using MediatR;
 using OrderManagement.Application.Commands;
 using OrderManagement.Application.DTOs;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Application.Services;
+using OrderManagement.Domain.Entities;
 using OrderManagement.Domain.Interfaces;
-using OrderManagement.Infrastructure.Multitenancy;
 
 namespace OrderManagement.Application.Handlers;
 
@@ -16,8 +17,9 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
     private readonly IOrderFactory _orderFactory;
     private readonly ITenantProvider _tenantProvider;
     private readonly IShippingCalculationService _shippingService;
+    private readonly IStockService _stockService;
 
-    public CreateOrderCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IDomainEventDispatcher eventDispatcher, IOrderFactory orderFactory, ITenantProvider tenantProvider, IShippingCalculationService shippingService)
+    public CreateOrderCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, IDomainEventDispatcher eventDispatcher, IOrderFactory orderFactory, ITenantProvider tenantProvider, IShippingCalculationService shippingService, IStockService stockService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -25,12 +27,46 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         _orderFactory = orderFactory;
         _tenantProvider = tenantProvider;
         _shippingService = shippingService;
+        _stockService = stockService;
     }
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
         string tenantId = _tenantProvider.GetCurrentTenant();
+
+        // Validar estoque e atribuir SkuId e StockOfficeId para cada item
+        foreach (CreateOrderItemDto itemDto in request.Order.Items)
+        {
+            // Verificar disponibilidade de estoque
+            StockAvailabilityResult? availability = await _stockService.CheckAvailabilityAsync(itemDto.ProductId, itemDto.ColorId, itemDto.SizeId, itemDto.Quantity, cancellationToken);
+
+            if (availability == null)
+            {
+                throw new InvalidOperationException($"Estoque insuficiente para o produto {itemDto.ProductId}, cor {itemDto.ColorId}, tamanho {itemDto.SizeId}, quantidade {itemDto.Quantity}");
+            }
+
+            // Buscar SKU existente (não criar aqui)
+            Sku? sku = await _unitOfWork.Skus.GetByProductColorSizeAsync(itemDto.ProductId, itemDto.ColorId, itemDto.SizeId, cancellationToken);
+
+            if (sku == null)
+            {
+                throw new InvalidOperationException($"SKU não encontrado para o produto {itemDto.ProductId}, cor {itemDto.ColorId}, tamanho {itemDto.SizeId}");
+            }
+
+            // Atualizar itemDto com SkuId para uso no factory
+            itemDto.SkuId = sku.Id;
+            itemDto.StockOfficeId = availability.StockOfficeId;
+        }
+
         Domain.Entities.Order order = _orderFactory.CreateOrder(request.Order, tenantId);
+
+        // Atribuir SkuId e StockOfficeId aos itens do pedido
+        for (int i = 0; i < order.Items.Count; i++)
+        {
+            OrderItem item = order.Items.ElementAt(i);
+            CreateOrderItemDto itemDto = request.Order.Items[i];
+            item.SetStockInfo(itemDto.SkuId!.Value, itemDto.StockOfficeId!.Value);
+        }
 
         // Calcular e aplicar frete se selecionado (opcional na criação)
         if (request.Order.SelectedCarrierId.HasValue &&

@@ -3,8 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Domain.Events;
-using OrderManagement.Infrastructure.Multitenancy;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -102,10 +102,10 @@ public class OrderCreatedConsumer : BackgroundService
                 if (orderCreatedEvent != null)
                 {
                     await ProcessOrderCreatedAsync(orderCreatedEvent, stoppingToken);
-                    
+
                     // Mark as processed
                     await idempotentProcessor.MarkAsProcessedAsync(messageId, nameof(OrderCreatedEvent), tenantId, stoppingToken);
-                    
+
                     _channel.BasicAck(ea.DeliveryTag, false);
                 }
             }

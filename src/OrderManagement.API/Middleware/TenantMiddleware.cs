@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using OrderManagement.Infrastructure.Multitenancy;
+using OrderManagement.Application.Interfaces;
 
 namespace OrderManagement.API.Middleware;
 

@@ -41,9 +41,9 @@ export default {
       error.value = ''
       try {
         await emit('login', {
-          username: username.value,
+          emailOrUserName: username.value, // Pode ser email ou username
           password: password.value,
-          tenantId: tenantId.value || 'default'
+          tenantId: tenantId.value || null
         })
       } catch (err) {
         error.value = 'Credenciais inválidas'
@@ -114,5 +114,8 @@ export default {
   text-align: center;
 }
 </style>
+
+
+
 
 

@@ -1,3 +1,5 @@
+using OrderManagement.Application.Interfaces;
+
 namespace OrderManagement.Infrastructure.Multitenancy;
 
 public class TenantProvider : ITenantProvider

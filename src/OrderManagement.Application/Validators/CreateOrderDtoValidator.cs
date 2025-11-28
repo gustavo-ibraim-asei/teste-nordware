@@ -34,6 +34,14 @@ public class CreateOrderItemDtoValidator : AbstractValidator<CreateOrderItemDto>
             .GreaterThan(0)
             .WithMessage("Product ID must be greater than zero");
 
+        RuleFor(x => x.ColorId)
+            .GreaterThan(0)
+            .WithMessage("Color ID must be greater than zero");
+
+        RuleFor(x => x.SizeId)
+            .GreaterThan(0)
+            .WithMessage("Size ID must be greater than zero");
+
         RuleFor(x => x.ProductName)
             .NotEmpty()
             .WithMessage("Product name is required");
