@@ -24,7 +24,7 @@
           >
             <option value="">Selecione um cliente</option>
             <option 
-              v-for="customer in customers" 
+              v-for="customer in customersStore.customers" 
               :key="customer.id" 
               :value="customer.id"
             >
@@ -368,6 +368,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useOrdersStore } from '../stores/orders'
 import { useStockStore } from '../stores/stock'
 import { usePricesStore } from '../stores/prices'
+import { useCustomersStore } from '../stores/customers'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { API_BASE_URL } from '../config/api'
@@ -378,12 +379,12 @@ export default {
     const ordersStore = useOrdersStore()
     const stockStore = useStockStore()
     const pricesStore = usePricesStore()
+    const customersStore = useCustomersStore()
     const router = useRouter()
     const loading = ref(false)
     const loadingCustomers = ref(false)
     const error = ref('')
     const success = ref('')
-    const customers = ref([])
 
     const loadingSkus = ref(false)
     const consultandoCep = ref(false)
@@ -435,14 +436,7 @@ export default {
     const loadCustomers = async () => {
       loadingCustomers.value = true
       try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get(`${API_BASE_URL}/customers`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'X-Tenant-Id': localStorage.getItem('tenantId') || 'default'
-          }
-        })
-        customers.value = response.data || []
+        await customersStore.fetchCustomers()
       } catch (err) {
         console.error('Erro ao carregar clientes:', err)
         error.value = 'Erro ao carregar lista de clientes'
@@ -768,7 +762,7 @@ export default {
       loadingSkus,
       error,
       success,
-      customers,
+      customersStore,
       stockStore,
       pricesStore,
       productsWithSkus,

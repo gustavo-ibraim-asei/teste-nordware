@@ -14,6 +14,7 @@ import Stocks from '../views/Stocks.vue'
 import CreateStock from '../views/CreateStock.vue'
 import PriceTables from '../views/PriceTables.vue'
 import ProductPrices from '../views/ProductPrices.vue'
+import Customers from '../views/Customers.vue'
 
 const routes = [
   {
@@ -98,6 +99,12 @@ const routes = [
     path: '/product-prices',
     name: 'ProductPrices',
     component: ProductPrices,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/customers',
+    name: 'Customers',
+    component: Customers,
     meta: { requiresAuth: true }
   }
 ]
