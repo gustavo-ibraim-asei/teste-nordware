@@ -1,0 +1,658 @@
+{
+	"info": {
+		"_postman_id": "order-management-api-complete",
+		"name": "Order Management API - Complete",
+		"description": "Collection completa da API de Gestão de Pedidos com todos os endpoints implementados",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tenant_id",
+			"value": "default",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"tenant_id\", jsonData.tenantId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario@exemplo.com\",\n    \"userName\": \"usuario\",\n    \"password\": \"senhaSegura123\",\n    \"tenantId\": \"tenant1\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Registra um novo usuário no sistema"
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+									"    pm.collectionVariables.set(\"tenant_id\", jsonData.tenantId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"emailOrUserName\": \"usuario@exemplo.com\",\n    \"password\": \"senhaSegura123\",\n    \"tenantId\": \"tenant1\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Autentica um usuário e retorna token JWT"
+					}
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "me"]
+						},
+						"description": "Obtém informações do usuário autenticado (requer JWT)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"order_id\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        {\n            \"productId\": 1,\n            \"productName\": \"Product 1\",\n            \"quantity\": 2,\n            \"unitPrice\": 29.99\n        },\n        {\n            \"productId\": 2,\n            \"productName\": \"Product 2\",\n            \"quantity\": 1,\n            \"unitPrice\": 49.99\n        }\n    ],\n    \"shippingAddress\": {\n        \"street\": \"Rua Exemplo\",\n        \"number\": \"123\",\n        \"complement\": \"Apto 45\",\n        \"neighborhood\": \"Centro\",\n        \"city\": \"São Paulo\",\n        \"state\": \"SP\",\n        \"zipCode\": \"01310-100\"\n    },\n    \"selectedCarrierId\": 1,\n    \"selectedShippingTypeId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"]
+						},
+						"description": "Cria um novo pedido. Frete é opcional na criação."
+					}
+				},
+				{
+					"name": "Create Order (Without Shipping)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        {\n            \"productId\": 1,\n            \"productName\": \"Product 1\",\n            \"quantity\": 2,\n            \"unitPrice\": 29.99\n        }\n    ],\n    \"shippingAddress\": {\n        \"street\": \"Rua Exemplo\",\n        \"number\": \"123\",\n        \"neighborhood\": \"Centro\",\n        \"city\": \"São Paulo\",\n        \"state\": \"SP\",\n        \"zipCode\": \"01310-100\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"]
+						},
+						"description": "Cria pedido sem frete (será obrigatório na finalização)"
+					}
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "{{order_id}}"]
+						},
+						"description": "Obtém um pedido específico por ID"
+					}
+				},
+				{
+					"name": "Get Orders (All)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"]
+						},
+						"description": "Lista todos os pedidos com paginação padrão"
+					}
+				},
+				{
+					"name": "Get Orders (Filtered by Customer)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders?customerId=1&page=1&pageSize=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "customerId",
+									"value": "1"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lista pedidos filtrados por cliente"
+					}
+				},
+				{
+					"name": "Get Orders (Filtered by Status)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders?status=1&page=1&pageSize=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "status",
+									"value": "1",
+									"description": "0=Pending, 1=Confirmed, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lista pedidos filtrados por status"
+					}
+				},
+				{
+					"name": "Get Orders (Filtered by Date Range)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders?startDate=2025-01-01&endDate=2025-12-31&page=1&pageSize=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-12-31"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lista pedidos filtrados por intervalo de datas"
+					}
+				},
+				{
+					"name": "Get Orders (With Sorting)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders?sortBy=TotalAmount&sortDescending=false&page=1&pageSize=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "TotalAmount",
+									"description": "CreatedAt, TotalAmount, Status"
+								},
+								{
+									"key": "sortDescending",
+									"value": "false"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Lista pedidos com ordenação personalizada"
+					}
+				},
+				{
+					"name": "Update Order Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{order_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "{{order_id}}", "status"]
+						},
+						"description": "Atualiza o status de um pedido (0=Pending, 1=Confirmed, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled)"
+					}
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{order_id}}?reason=Customer%20request",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "{{order_id}}"],
+							"query": [
+								{
+									"key": "reason",
+									"value": "Customer request"
+								}
+							]
+						},
+						"description": "Cancela um pedido (não pode cancelar se já foi entregue/enviado)"
+					}
+				},
+				{
+					"name": "Complete Order (With Shipping)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"carrierId\": 1,\n    \"shippingTypeId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{order_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "{{order_id}}", "complete"]
+						},
+						"description": "Finaliza um pedido aplicando frete (obrigatório). Atualiza status para Confirmed."
+					}
+				},
+				{
+					"name": "Process Orders Batch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderIds\": [1, 2, 3],\n    \"targetStatus\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders/batch",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "batch"]
+						},
+						"description": "Processa múltiplos pedidos em lote (paralelo)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Shipping",
+			"item": [
+				{
+					"name": "Calculate Shipping",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"zipCode\": \"01310-100\",\n    \"orderTotal\": 250.00,\n    \"totalWeight\": 2.5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/shipping/calculate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "calculate"]
+						},
+						"description": "Calcula opções de frete disponíveis baseado em CEP, valor do pedido e peso"
+					}
+				},
+				{
+					"name": "Calculate Shipping for Order",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/shipping/calculate/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "calculate", "{{order_id}}"]
+						},
+						"description": "Calcula frete para um pedido específico (Not Implemented)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment Webhook",
+			"item": [
+				{
+					"name": "Receive Payment Update",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": {{order_id}},\n    \"paymentStatus\": \"paid\",\n    \"transactionId\": \"TXN-12345\",\n    \"amount\": 109.97,\n    \"processedAt\": \"2025-01-15T10:30:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/paymentwebhook/payment-update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "paymentwebhook", "payment-update"]
+						},
+						"description": "Recebe webhook de atualização de pagamento e atualiza status do pedido. Status possíveis: paid, approved, pending, cancelled, refunded, rejected"
+					}
+				},
+				{
+					"name": "Receive Payment Update (Pending)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": {{order_id}},\n    \"paymentStatus\": \"pending\",\n    \"transactionId\": \"TXN-12346\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/paymentwebhook/payment-update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "paymentwebhook", "payment-update"]
+						},
+						"description": "Webhook para pagamento pendente"
+					}
+				},
+				{
+					"name": "Receive Payment Update (Cancelled)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": {{order_id}},\n    \"paymentStatus\": \"cancelled\",\n    \"transactionId\": \"TXN-12347\",\n    \"amount\": 109.97\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/paymentwebhook/payment-update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "paymentwebhook", "payment-update"]
+						},
+						"description": "Webhook para pagamento cancelado"
+					}
+				}
+			]
+		},
+		{
+			"name": "Feature Flags",
+			"item": [
+				{
+					"name": "Get Feature Flag",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/featureflags/real-time-updates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "featureflags", "real-time-updates"]
+						},
+						"description": "Verifica status de uma feature flag (requer role Admin)"
+					}
+				},
+				{
+					"name": "Set Feature Flag",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "true"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/featureflags/real-time-updates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "featureflags", "real-time-updates"]
+						},
+						"description": "Ativa/desativa uma feature flag (requer role Admin)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Verifica saúde da aplicação e serviços (PostgreSQL, RabbitMQ, Redis)"
+					}
+				}
+			]
+		}
+	]
+}

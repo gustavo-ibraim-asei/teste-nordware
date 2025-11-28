@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-management-api
+  labels:
+    app: order-management-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: order-management-api
+  template:
+    metadata:
+      labels:
+        app: order-management-api
+    spec:
+      containers:
+      - name: api
+        image: order-management-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: https
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            configMapKeyRef:
+              name: order-management-config
+              key: database-connection
+        - name: RABBITMQ_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: order-management-config
+              key: rabbitmq-host
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: order-management-secrets
+              key: rabbitmq-user
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: order-management-secrets
+              key: rabbitmq-password
+        - name: Jwt__Key
+          valueFrom:
+            secretKeyRef:
+              name: order-management-secrets
+              key: jwt-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: regcred
+
+

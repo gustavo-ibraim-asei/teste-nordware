@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-management-config
+data:
+  database-connection: "Host=postgres-service;Database=OrderManagement;Username=postgres;Password=postgres;Port=5432"
+  rabbitmq-host: "rabbitmq-service"
+  app-name: "Order Management API"
+  environment: "production"
+
+
