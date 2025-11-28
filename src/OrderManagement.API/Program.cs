@@ -253,6 +253,23 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
+    
+    // Configurar SignalR para usar JWT
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // SignalR envia o token via query string
+            string? accessToken = context.Request.Query["access_token"];
+            string path = context.HttpContext.Request.Path.Value ?? "";
+            
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWith("/orderHub", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -294,7 +311,8 @@ builder.Services.AddHealthChecks()
         }
     });
 
-// CORS - Permitir qualquer origem
+// CORS - Permitir qualquer origem (sem credenciais para compatibilidade)
+// Para SignalR, vamos usar query string para o token ao invés de headers
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -365,10 +383,13 @@ app.UseHttpsRedirection();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseMiddleware<TenantMiddleware>();
 app.UseAuthentication();
-app.UseRateLimiter();
+// Rate Limiter pode interferir com SignalR, então vamos aplicar apenas em rotas específicas
+// app.UseRateLimiter();
 app.UseAuthorization();
+
+// Mapear SignalR antes dos controllers para evitar interferência
+app.MapHub<OrderHub>("/orderHub"); // Autenticação via query string (access_token)
 app.MapControllers();
-app.MapHub<OrderHub>("/orderHub");
 app.MapHealthChecks("/health");
 
 // Helper methods for Polly policies

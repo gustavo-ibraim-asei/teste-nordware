@@ -19,7 +19,7 @@ public class Order : BaseEntity
     public int? ShippingTypeId { get; private set; }
     public string? ShippingType { get; private set; }
     public int EstimatedDeliveryDays { get; private set; }
-    public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
+    public byte[] RowVersion { get; private set; } = null!;
 
     // Navigation properties
     public virtual ICollection<OrderItem> Items { get; private set; } = new List<OrderItem>();

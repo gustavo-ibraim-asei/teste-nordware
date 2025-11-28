@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using OrderManagement.API.Services;
 using OrderManagement.Application.Commands;
 using OrderManagement.Application.DTOs;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Application.Queries;
 using OrderManagement.Domain.Enums;
 using BatchProcessResultDto = OrderManagement.Application.Commands.BatchProcessResultDto;
@@ -19,12 +20,14 @@ public class OrdersController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<OrdersController> _logger;
     private readonly INotificationService _notificationService;
+    private readonly ITenantProvider _tenantProvider;
 
-    public OrdersController(IMediator mediator, ILogger<OrdersController> logger, INotificationService notificationService)
+    public OrdersController(IMediator mediator, ILogger<OrdersController> logger, INotificationService notificationService, ITenantProvider tenantProvider)
     {
         _mediator = mediator;
         _logger = logger;
         _notificationService = notificationService;
+        _tenantProvider = tenantProvider;
     }
 
     /// <summary>
@@ -41,7 +44,8 @@ public class OrdersController : ControllerBase
         OrderDto order = await _mediator.Send(command, cancellationToken);
 
         // Send notification
-        string tenantId = HttpContext.Items["TenantId"]?.ToString() ?? "default";
+        string tenantId = _tenantProvider.GetCurrentTenant();
+        _logger.LogInformation("Sending SignalR notification for order {OrderId} to tenant {TenantId}", order.Id, tenantId);
         await _notificationService.NotifyOrderCreatedAsync(order, tenantId, cancellationToken);
 
         return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
@@ -126,7 +130,8 @@ public class OrdersController : ControllerBase
             OrderDto order = await _mediator.Send(command, cancellationToken);
 
             // Send notification
-            string tenantId = HttpContext.Items["TenantId"]?.ToString() ?? "default";
+            string tenantId = _tenantProvider.GetCurrentTenant();
+            _logger.LogInformation("Sending SignalR notification for order status update {OrderId} to tenant {TenantId}", order.Id, tenantId);
             await _notificationService.NotifyOrderStatusUpdatedAsync(order, tenantId, cancellationToken);
 
             return Ok(order);

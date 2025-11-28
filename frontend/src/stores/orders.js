@@ -14,26 +14,86 @@ export const useOrdersStore = defineStore('orders', () => {
       connection.value.stop()
     }
 
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.error('No token available for SignalR connection')
+      return
+    }
+
+    const url = `${API_SIGNALR_URL}?access_token=${encodeURIComponent(token)}`
+    console.log('Connecting to SignalR:', url)
+
     connection.value = new signalR.HubConnectionBuilder()
-      .withUrl(API_SIGNALR_URL)
-      .withAutomaticReconnect()
+      .withUrl(url, {
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.LongPolling, // Usar LongPolling para evitar problemas com WebSocket
+        logger: signalR.LogLevel.Information // Habilitar logs
+      })
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: retryContext => {
+          if (retryContext.elapsedMilliseconds < 60000) {
+            return 2000
+          }
+          return null
+        }
+      })
+      .configureLogging(signalR.LogLevel.Information)
       .build()
+
+    // Adicionar handlers de eventos de conexão
+    connection.value.onclose((error) => {
+      console.log('SignalR connection closed', error)
+    })
+
+    connection.value.onreconnecting((error) => {
+      console.log('SignalR reconnecting', error)
+    })
+
+    connection.value.onreconnected((connectionId) => {
+      console.log('SignalR reconnected', connectionId)
+      connection.value.invoke('JoinTenantGroup', tenantId).catch(err => {
+        console.error('Error rejoining tenant group:', err)
+      })
+    })
 
     connection.value.start()
       .then(() => {
-        console.log('SignalR connected')
-        connection.value.invoke('JoinTenantGroup', tenantId)
+        console.log('SignalR connected successfully')
+        return connection.value.invoke('JoinTenantGroup', tenantId)
       })
-      .catch(err => console.error('SignalR connection error:', err))
+      .then(() => {
+        console.log('Joined tenant group:', tenantId)
+      })
+      .catch(err => {
+        console.error('SignalR connection error:', err)
+        console.error('Error details:', err.message)
+        console.error('Error stack:', err.stack)
+      })
 
-    connection.value.on('OrderCreated', (order) => {
+    connection.value.on('OrderCreated', async (order) => {
+      console.log('OrderCreated received via SignalR:', order)
+      // Adicionar o novo pedido no início da lista
       orders.value.unshift(order)
+      // Recarregar os pedidos para garantir que as estatísticas sejam atualizadas
+      try {
+        await fetchOrders({ page: 1, pageSize: 50 })
+      } catch (error) {
+        console.error('Error reloading orders after SignalR notification:', error)
+      }
     })
 
-    connection.value.on('OrderStatusUpdated', (order) => {
+    connection.value.on('OrderStatusUpdated', async (order) => {
+      console.log('OrderStatusUpdated received via SignalR:', order)
       const index = orders.value.findIndex(o => o.id === order.id)
       if (index !== -1) {
         orders.value[index] = order
+      } else {
+        // Se o pedido não estiver na lista, recarregar
+        try {
+          await fetchOrders({ page: 1, pageSize: 50 })
+        } catch (error) {
+          console.error('Error reloading orders after SignalR notification:', error)
+        }
       }
     })
   }

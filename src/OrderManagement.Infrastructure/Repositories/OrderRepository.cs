@@ -13,6 +13,11 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     {
     }
 
+    public IQueryable<Order> GetQueryable()
+    {
+        return _dbSet.Include(o => o.Items).AsQueryable();
+    }
+
     public async Task<IEnumerable<Order>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
     {
         return await _dbSet

@@ -17,17 +17,35 @@ public class NotificationService : INotificationService
 
     public async Task NotifyOrderCreatedAsync(OrderDto order, string tenantId, CancellationToken cancellationToken = default)
     {
-        if (_featureFlags.IsEnabled("real-time-updates"))
+        try
         {
-            await _hubContext.Clients.Group($"tenant_{tenantId}").SendAsync("OrderCreated", order, cancellationToken);
+            if (_featureFlags.IsEnabled("real-time-updates"))
+            {
+                string groupName = $"tenant_{tenantId}";
+                await _hubContext.Clients.Group(groupName).SendAsync("OrderCreated", order, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't throw - notification failure shouldn't break order creation
+            Console.WriteLine($"Error sending SignalR notification: {ex.Message}");
         }
     }
 
     public async Task NotifyOrderStatusUpdatedAsync(OrderDto order, string tenantId, CancellationToken cancellationToken = default)
     {
-        if (_featureFlags.IsEnabled("real-time-updates"))
+        try
         {
-            await _hubContext.Clients.Group($"tenant_{tenantId}").SendAsync("OrderStatusUpdated", order, cancellationToken);
+            if (_featureFlags.IsEnabled("real-time-updates"))
+            {
+                string groupName = $"tenant_{tenantId}";
+                await _hubContext.Clients.Group(groupName).SendAsync("OrderStatusUpdated", order, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't throw - notification failure shouldn't break order update
+            Console.WriteLine($"Error sending SignalR notification: {ex.Message}");
         }
     }
 }

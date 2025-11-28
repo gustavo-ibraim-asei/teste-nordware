@@ -57,10 +57,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(100);
 
         // Optimistic concurrency control
-        // Para PostgreSQL com Npgsql, usamos IsRowVersion que cria um trigger automático
+        // Para PostgreSQL com Npgsql, precisamos configurar explicitamente
         builder.Property(o => o.RowVersion)
             .IsRowVersion()
-            .IsRequired();
+            .IsRequired()
+            .ValueGeneratedOnAddOrUpdate()
+            .HasDefaultValueSql("gen_random_bytes(8)");
 
         builder.HasMany(o => o.Items)
             .WithOne(i => i.Order)

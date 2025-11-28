@@ -47,10 +47,8 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             }
         }
 
-        // Get all orders first, then filter in memory (simplified approach)
-        // In a real scenario, we'd use IQueryable from the repository
-        IEnumerable<Domain.Entities.Order> allOrders = await _unitOfWork.Orders.GetAllAsync(cancellationToken);
-        IQueryable<Domain.Entities.Order> query = allOrders.AsQueryable();
+        // Get IQueryable from repository to query directly in the database
+        IQueryable<Domain.Entities.Order> query = _unitOfWork.Orders.GetQueryable();
 
         // Apply filters
         if (request.Query.CustomerId.HasValue)

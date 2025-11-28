@@ -79,6 +79,10 @@
               <span class="nav-icon">💵</span>
               <span>Preços</span>
             </router-link>
+            <router-link to="/customers" class="nav-item" @click="closeSidebarOnMobile">
+              <span class="nav-icon">👥</span>
+              <span>Clientes</span>
+            </router-link>
             <router-link to="/create-order" class="nav-item nav-item-highlight" @click="closeSidebarOnMobile">
               <span class="nav-icon">🛒</span>
               <span>Novo Pedido</span>
