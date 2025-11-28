@@ -2,11 +2,11 @@
 
 ## 📋 Descrição do Projeto
 
-Sistema de gestão de pedidos de e-commerce desenvolvido em **.NET 10** com **ASP.NET Core Web API**. O sistema implementa uma arquitetura **Clean Architecture/DDD**, processamento assíncrono com **RabbitMQ**, integrações externas, autenticação **JWT**, **multitenancy** e diversas funcionalidades avançadas.
+Sistema completo de gestão de pedidos de e-commerce desenvolvido com **.NET 10** (ASP.NET Core Web API) no backend e **Vue 3** no frontend. O sistema implementa uma arquitetura **Clean Architecture/DDD**, processamento assíncrono com **RabbitMQ**, integrações externas, autenticação **JWT**, **multitenancy**, atualizações em tempo real com **SignalR** e diversas funcionalidades avançadas.
 
 ### 🎯 Objetivo
 
-Desenvolver uma API RESTful completa para gerenciamento de pedidos de um e-commerce integrado com múltiplos marketplaces. O sistema processa pedidos de forma assíncrona, realiza integrações externas e garante alta disponibilidade.
+Desenvolver uma solução completa (API RESTful + SPA) para gerenciamento de pedidos de um e-commerce integrado com múltiplos marketplaces. O sistema processa pedidos de forma assíncrona, realiza integrações externas, oferece interface web moderna e responsiva, e garante alta disponibilidade.
 
 ### ✨ Principais Características
 
@@ -19,6 +19,8 @@ Desenvolver uma API RESTful completa para gerenciamento de pedidos de um e-comme
 - **Cache Distribuído**: Redis para melhorar performance de consultas
 - **Concorrência Otimista**: Controle de conflitos com RowVersion
 - **Testes Abrangentes**: 85+ testes unitários e 19+ testes de integração
+- **Frontend Moderno**: SPA Vue 3 com interface responsiva tipo e-commerce
+- **Tempo Real**: Atualizações automáticas via SignalR
 - **Documentação Completa**: Swagger, Postman Collection, diagramas
 
 ---
@@ -163,6 +165,123 @@ Messaging → Domain
 
 ---
 
+## Questões Teóricas
+
+### 1. Cache Distribuído
+
+**Como implementaria um sistema de cache distribuído para melhorar a performance das consultas de pedidos?**
+
+**Resposta:**
+
+Implementei cache distribuído usando Redis com as seguintes estratégias:
+
+1. **Cache de Consultas**: O `GetOrdersQueryHandler` utiliza `IDistributedCache` para cachear resultados de consultas de pedidos com chave baseada nos filtros aplicados.
+
+2. **Estratégias de Invalidação**:
+   - **TTL (Time To Live)**: Cache expira após 5 minutos
+   - **Invalidação por Evento**: Quando um pedido é criado/atualizado, o cache relacionado pode ser invalidado
+   - **Cache Keys Estruturadas**: `orders:{customerId}:{status}:{page}:{pageSize}` permite invalidação seletiva
+
+3. **Padrões Utilizados**:
+   - **Cache-Aside**: Aplicação verifica cache antes de consultar banco
+   - **Write-Through**:  implementado para atualizar cache junto com banco
+
+4. **Melhorias Futuras**:
+   - Implementar invalidação automática via eventos de domínio
+   - Cache de entidades individuais além de listagens
+   - Cache warming para consultas frequentes
+
+### 2. Consistência Eventual
+
+**Como garantiria a consistência eventual entre o serviço de pedidos e o serviço de estoque em uma arquitetura distribuída?**
+
+**Resposta:**
+
+A consistência eventual é garantida através de:
+
+1. **Event-Driven Architecture**: Utilizamos RabbitMQ para publicar eventos de mudança de status de pedidos. Quando um pedido é confirmado, o evento `OrderStatusChangedEvent` é publicado.
+
+2. **Saga Pattern**: Para operações complexas, implementaria uma saga que orquestra múltiplos serviços:
+   - Pedido criado → Reservar estoque → Confirmar pedido
+   - Se reserva falhar → Compensar (cancelar pedido)
+
+3. **Idempotência**: O `IdempotentMessageProcessor` garante que mensagens não sejam processadas duas vezes, evitando duplicação de atualizações de estoque.
+
+4. **Retry e DLQ**: Mensagens com falha são retentadas e, após esgotar tentativas, enviadas para Dead Letter Queue para análise manual.
+
+5. **Event Sourcing** (futuro): Poderia implementar Event Sourcing para rastrear todas as mudanças e permitir reconstrução do estado.
+
+### 3. Retry Resiliente
+
+**Como implementaria um mecanismo de retry resiliente para integrações externas que frequentemente falham?**
+
+**Resposta:**
+
+Implementei retry policies usando **Polly**:
+
+1. **Retry Policy**:
+   ```csharp
+   .WaitAndRetryAsync(
+       retryCount: 3,
+       sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
+   )
+   ```
+   - 3 tentativas com backoff exponencial (2s, 4s, 8s)
+
+2. **Circuit Breaker**:
+   ```csharp
+   .CircuitBreakerAsync(
+       handledEventsAllowedBeforeBreaking: 5,
+       durationOfBreak: TimeSpan.FromSeconds(30)
+   )
+   ```
+   - Abre circuito após 5 falhas consecutivas
+   - Mantém aberto por 30 segundos
+   - Evita sobrecarga de serviços externos
+
+3. **Trade-offs**:
+   - **Retry Imediato**: Baixa latência, mas pode sobrecarregar serviço
+   - **Backoff Exponencial**: Reduz carga, mas aumenta latência total
+   - **Circuit Breaker**: Protege serviço externo, mas pode causar falhas temporárias
+
+4. **Melhorias**:
+   - Jitter no backoff para evitar thundering herd
+   - Retry apenas para erros transientes (5xx, timeouts)
+   - Logging detalhado de tentativas
+
+### 4. Deadlocks em Alta Concorrência
+
+**Como abordaria o problema de deadlocks em um cenário de alta concorrência no processamento de pedidos?**
+
+**Resposta:**
+
+1. **Prevenção**:
+   - **Controle de Concorrência Otimista**: Implementado com `RowVersion` no Entity Framework
+   - **Ordem Consistente de Locks**: Sempre adquirir locks na mesma ordem
+   - **Timeouts**: Configurar timeouts em transações
+
+2. **Detecção**:
+   - **Logging**: Log detalhado de transações e locks
+   - **Monitoring**: Alertas quando transações excedem tempo esperado
+   - **Application Insights**: Rastreamento de dependências e locks
+
+3. **Resolução**:
+   - **Retry com Jitter**: Retry automático com backoff exponencial e jitter
+   - **Queue Pattern**: Processar pedidos em fila para evitar concorrência excessiva
+   - **Partitioning**: Dividir processamento por tenant ou região
+
+4. **Técnicas Específicas**:
+   - **NOLOCK** (não recomendado): Apenas para leituras não críticas
+   - **READ COMMITTED SNAPSHOT**: Reduz bloqueios de leitura
+   - **Row-Level Locking**: Usar locks granulares
+
+5. **Ferramentas**:
+   - **SQL Server Profiler**: Para detectar deadlocks
+   - **PostgreSQL Logging**: Configurar `log_lock_waits`
+   - **Distributed Tracing**: Jaeger ou Zipkin para rastrear locks distribuídos
+
+---
+
 ## 📦 Pré-requisitos
 
 - .NET 10 SDK
@@ -175,6 +294,29 @@ Messaging → Domain
 
 ## 🔧 Setup e Execução
 
+### 🚀 Início Rápido
+
+A forma mais rápida de executar o sistema completo é usando Docker Compose:
+
+```bash
+# 1. Clonar o repositório
+git clone <repository-url>
+cd OrderManagement
+
+# 2. Executar todos os serviços (PostgreSQL, RabbitMQ, Redis, API, Frontend)
+docker-compose up -d
+
+# 3. Aguardar alguns minutos para build inicial das imagens
+
+# 4. Acessar a aplicação
+# Frontend: http://localhost:3000
+# API Swagger: https://localhost:60545/swagger
+```
+
+**Pronto!** O sistema está rodando. Você pode começar a usar o frontend em `http://localhost:3000`.
+
+---
+
 ### 1. Clonar o Repositório
 
 ```bash
@@ -184,7 +326,7 @@ cd OrderManagement
 
 ### 2. Executar com Docker Compose
 
-O projeto inclui um `docker-compose.yml` que configura automaticamente PostgreSQL, RabbitMQ e Redis:
+O projeto inclui um `docker-compose.yml` que configura automaticamente todos os serviços necessários:
 
 ```bash
 docker-compose up -d
@@ -198,11 +340,24 @@ Isso iniciará os seguintes serviços:
 - **RabbitMQ** na porta `5672` (Management UI em `http://localhost:15672`)
   - Username: `guest`
   - Password: `guest`
-- **Redis** na porta `6379` (opcional, para cache distribuído)
+- **Redis** na porta `6379` (cache distribuído)
+- **API .NET 10** nas portas `60545` (HTTPS) e `60546` (HTTP)
+  - Swagger: `https://localhost:60545/swagger`
+  - Health Check: `https://localhost:60545/health`
+- **Frontend Vue 3** na porta `3000`
+  - Aplicação: `http://localhost:3000`
+
+**Nota**: Na primeira execução, o Docker irá construir as imagens da API e do Frontend, o que pode levar alguns minutos.
 
 Para verificar se os serviços estão rodando:
 ```bash
 docker-compose ps
+```
+
+Para ver os logs de um serviço específico:
+```bash
+docker-compose logs -f order-management-api
+docker-compose logs -f order-management-frontend
 ```
 
 Para parar os serviços:
@@ -213,6 +368,11 @@ docker-compose down
 Para parar e remover volumes (limpar dados):
 ```bash
 docker-compose down -v
+```
+
+Para reconstruir as imagens após mudanças no código:
+```bash
+docker-compose up -d --build
 ```
 
 ### 3. Configurar Variáveis de Ambiente
@@ -242,9 +402,9 @@ As migrações do Entity Framework Core são aplicadas automaticamente na inicia
 - `20251128182842_AddOrderItemQueryFilter` - Adiciona query filter para OrderItem (multitenancy)
 - `20250115000000_AddPriceTablesAndProductPrices` - Adiciona tabelas PriceTables e ProductPrices
 - `20251128194019_FixProductPriceRelationship` - Corrige relacionamento entre ProductPrice e Product
-- `20251128195010_FixRowVersionDefaultValue` - Adiciona trigger e valor padrão para RowVersion em Orders
-- `20251128195106_FixRowVersionTrigger` - Migration adicional para RowVersion (se necessário)
-- `AddCustomers` - Adiciona tabela Customers e relacionamento com Orders
+- `20251128195010_FixRowVersionDefaultValue` - Adiciona trigger e valor padrão para RowVersion em Orders (habilita extensão pgcrypto)
+- `20251128201305_AddCustomersTable` - Adiciona tabela Customers e relacionamento com Orders
+- `20251128202207_FixRowVersionInsert` - Adiciona trigger para garantir geração de RowVersion no INSERT
 
 **O que é criado automaticamente:**
 - Todas as tabelas do banco de dados (Orders, OrderItems, Users, Roles, Products, StockOffices, Colors, Sizes, Skus, Stocks, PriceTables, ProductPrices, Customers)
@@ -271,29 +431,49 @@ dotnet ef migrations remove --project src/OrderManagement.Infrastructure --start
 
 ### 5. Executar a API
 
-**Opção 1: Executar diretamente com .NET CLI**
+**Opção 1: Via Docker Compose (Recomendado)**
+
+Se você executou `docker-compose up -d`, a API já está rodando automaticamente. Acesse:
+- **HTTPS**: `https://localhost:60545`
+- **HTTP**: `http://localhost:60546`
+- **Swagger**: `https://localhost:60545/swagger`
+- **Health Check**: `https://localhost:60545/health`
+
+**Opção 2: Executar diretamente com .NET CLI (Desenvolvimento Local)**
 
 ```bash
 cd src/OrderManagement.API
 dotnet run
 ```
 
-**Opção 2: Executar com Docker**
+A API estará disponível nas portas configuradas em `launchSettings.json`:
+- **HTTPS**: `https://localhost:60545`
+- **HTTP**: `http://localhost:60546`
+
+**Opção 3: Executar com Docker (Standalone)**
 
 ```bash
 docker build -t order-management-api .
-docker run -p 5000:8080 --env-file .env order-management-api
+docker run -p 60545:8080 -p 60546:8081 \
+  -e ConnectionStrings__DefaultConnection="Host=host.docker.internal;Database=OrderManagement;Username=postgres;Password=postgres;Port=5432" \
+  -e RabbitMQ__HostName=host.docker.internal \
+  order-management-api
 ```
-
-A API estará disponível em:
-- **HTTP**: `http://localhost:5000`
-- **HTTPS**: `https://localhost:5001`
-- **Swagger**: `http://localhost:5000/swagger`
-- **Health Check**: `http://localhost:5000/health`
 
 **Nota**: Certifique-se de que os serviços do Docker Compose (PostgreSQL, RabbitMQ, Redis) estão rodando antes de iniciar a API.
 
-### 6. Executar o Frontend (Opcional)
+### 6. Executar o Frontend
+
+**Opção 1: Via Docker Compose (Recomendado)**
+
+Se você executou `docker-compose up -d`, o frontend já está rodando automaticamente. Acesse:
+- **Frontend**: `http://localhost:3000`
+
+O frontend em Docker usa Nginx que faz proxy automático para a API.
+
+**Opção 2: Desenvolvimento Local (Vite Dev Server)**
+
+Para desenvolvimento local sem Docker:
 
 ```bash
 cd frontend
@@ -301,7 +481,16 @@ npm install
 npm run dev
 ```
 
-O frontend estará disponível em `http://localhost:5173`
+O frontend estará disponível em `http://localhost:3000`
+
+**Detecção Automática de Ambiente:**
+O frontend detecta automaticamente o ambiente e configura as URLs da API adequadamente:
+
+- **Desenvolvimento (Vite)**: Usa proxy do Vite (`/api` → `https://localhost:60545/api`)
+- **Produção com Nginx (Docker)**: Usa proxy do Nginx (`/api` → `http://order-management-api:8080/api`)
+- **Produção sem Nginx (build local)**: Usa URL direta da API (`https://localhost:60545/api`)
+
+**Importante**: Certifique-se de que a API está rodando antes de acessar o frontend em desenvolvimento local.
 
 ---
 
@@ -310,7 +499,7 @@ O frontend estará disponível em `http://localhost:5173`
 ### Swagger/OpenAPI
 
 A documentação completa e interativa da API está disponível via Swagger em:
-- **URL**: `http://localhost:5000/swagger`
+- **URL**: `https://localhost:60545/swagger`
 
 O Swagger inclui:
 - ✅ Todos os endpoints documentados
@@ -1184,7 +1373,7 @@ Uma collection completa do Postman está disponível em:
 **Como usar:**
 1. Importe a collection no Postman
 2. Configure as variáveis de ambiente:
-   - `base_url`: `http://localhost:5000`
+   - `base_url`: `https://localhost:60545`
    - `jwt_token`: (será preenchido automaticamente após login)
    - `tenant_id`: (será preenchido automaticamente após login)
 3. Execute o request "Register User" ou "Login" primeiro para obter o token
@@ -1438,6 +1627,9 @@ Todas as novas entidades seguem os mesmos padrões da entidade `Order`:
 - ✅ **Controle de concorrência otimista**
   - Entity `Order` possui `RowVersion` (byte[])
   - EF Core detecta conflitos automaticamente
+  - **PostgreSQL**: Triggers automáticos para geração de `RowVersion` no INSERT e UPDATE
+  - **Extensão pgcrypto**: Habilitada para geração de valores aleatórios (`gen_random_bytes(8)`)
+  - **Valor padrão**: `RowVersion` gerado automaticamente pelo banco de dados
 
 - ✅ **Cache distribuído (Redis)**
   - Implementado em `GetOrdersQueryHandler`
@@ -1473,13 +1665,166 @@ Todas as novas entidades seguem os mesmos padrões da entidade `Order`:
   - `secret.yaml.example`
 
 ### Dashboard Frontend
-- ✅ SPA Vue 3 com listagem de pedidos
-- ✅ Autenticação JWT
-- ✅ Integração com SignalR para atualizações em tempo real
-- ✅ **CRUD completo de estoque**: Produtos, Filiais, Cores, Tamanhos, SKUs, Estoque
-- ✅ **Criação de pedidos**: Seleção de SKUs com estoque disponível, validação em tempo real
-- ✅ **Interface intuitiva**: Mostra apenas produtos disponíveis, quantidade máxima limitada ao estoque
-- ✅ **Menu de navegação**: Sidebar com links para todas as seções (Dashboard, Produtos, Filiais, Cores, Tamanhos, Criar Pedido)
+
+O frontend é uma **SPA (Single Page Application)** desenvolvida com **Vue 3**, **Vite**, **Pinia** e **Vue Router**, oferecendo uma interface moderna e totalmente responsiva para gestão completa do sistema de pedidos.
+
+#### Tecnologias Utilizadas
+- **Vue 3** com Composition API
+- **Vite** (build tool e dev server)
+- **Pinia** (state management)
+- **Vue Router** (roteamento)
+- **Axios** (cliente HTTP)
+- **@microsoft/signalr** (comunicação em tempo real)
+- **Nginx** (servidor web para produção)
+
+#### Funcionalidades Implementadas
+
+**1. Autenticação e Autorização**
+- ✅ Tela de registro de usuários (`Register.vue`)
+- ✅ Modal de login (`LoginModal.vue`)
+- ✅ Autenticação JWT com armazenamento no Pinia store
+- ✅ Proteção de rotas (guards)
+- ✅ Exibição de informações do usuário autenticado (nome, tenant)
+
+**2. Dashboard Principal (`Dashboard.vue`)**
+- ✅ Listagem de pedidos em tempo real
+- ✅ Integração com SignalR para atualizações automáticas
+- ✅ Filtros por status, cliente e período
+- ✅ Visualização de detalhes dos pedidos
+- ✅ Atualização automática quando novos pedidos são criados ou status alterados
+
+**3. Gestão de Produtos (`Products.vue`)**
+- ✅ Listagem de produtos com paginação
+- ✅ Criação, edição e exclusão de produtos
+- ✅ Validação de código único por tenant
+- ✅ Interface com modais para CRUD
+
+**4. Gestão de Filiais de Estoque (`StockOffices.vue`)**
+- ✅ Listagem de filiais
+- ✅ Criação, edição e exclusão de filiais
+- ✅ Validação de código único
+
+**5. Gestão de Cores (`Colors.vue`)**
+- ✅ Listagem de cores
+- ✅ Criação, edição e exclusão de cores
+- ✅ Validação de código único
+
+**6. Gestão de Tamanhos (`Sizes.vue`)**
+- ✅ Listagem de tamanhos
+- ✅ Criação, edição e exclusão de tamanhos
+- ✅ Validação de código único
+
+**7. Gestão de SKUs (`Skus.vue` e `CreateSku.vue`)**
+- ✅ Listagem de SKUs com informações de produto, cor e tamanho
+- ✅ Criação de SKUs (combinação Produto + Cor + Tamanho)
+- ✅ Validação proativa de duplicidade antes de criar
+- ✅ Exibição de estoque disponível por SKU
+- ✅ Geração automática de código SKU e barcode EAN-13
+
+**8. Gestão de Estoques (`Stocks.vue` e `CreateStock.vue`)**
+- ✅ Listagem de estoques com informações de SKU, filial e quantidades
+- ✅ Criação de registros de estoque (associação SKU + Filial + Quantidade)
+- ✅ Validação proativa de duplicidade antes de criar
+- ✅ Exibição de quantidade total, reservada e disponível
+- ✅ Atualização de quantidades
+
+**9. Gestão de Tabelas de Preços (`PriceTables.vue`)**
+- ✅ Listagem de tabelas de preços
+- ✅ Criação, edição e exclusão de tabelas
+- ✅ Ativação/desativação de tabelas
+- ✅ Filtro por tabelas ativas
+
+**10. Gestão de Preços de Produtos (`ProductPrices.vue`)**
+- ✅ Listagem de preços com filtros por produto e tabela
+- ✅ Criação, edição e exclusão de preços
+- ✅ Validação de preço único por produto/tabela/tenant
+- ✅ Interface com modais para CRUD
+
+**11. Gestão de Clientes (`Customers.vue`)**
+- ✅ Listagem de clientes com filtros por nome e email
+- ✅ Criação, edição e exclusão de clientes
+- ✅ Validação de email único por tenant
+- ✅ Interface responsiva com modais
+
+**12. Criação de Pedidos (`CreateOrder.vue`)**
+- ✅ **Seleção dinâmica de SKUs**: Carrega apenas SKUs com estoque disponível
+- ✅ **Seleção de cliente**: Dropdown com todos os clientes cadastrados
+- ✅ **Seleção de tabela de preços**: Dropdown para escolher tabela de preços
+- ✅ **Preenchimento automático de preço**: Ao selecionar produto e tabela, preço unitário é preenchido automaticamente
+- ✅ **Consulta automática de CEP**: 
+  - Consulta ao atingir 8 caracteres
+  - Consulta no evento blur do campo
+  - Preenchimento automático de endereço completo
+- ✅ **Cálculo automático de frete**: 
+  - Calcula frete ao selecionar CEP válido
+  - Exibe múltiplas opções de transporte
+  - Atualiza valor total do pedido
+- ✅ **Validação em tempo real**: Validações de estoque, quantidades e campos obrigatórios
+- ✅ **Interface intuitiva**: Formulário organizado com múltiplos itens, totais calculados automaticamente
+- ✅ **Nomenclatura clara**: Colunas da tabela de itens nomeadas adequadamente
+
+**13. Interface e UX**
+- ✅ **Design moderno tipo e-commerce**: Interface limpa e profissional
+- ✅ **Totalmente responsivo**: Adaptação para desktop, tablet e mobile
+- ✅ **Menu hambúrguer**: Menu lateral retrátil para dispositivos móveis
+- ✅ **Sidebar de navegação**: Menu lateral com links para todas as seções
+- ✅ **Feedback visual**: Mensagens de sucesso/erro, loading states
+- ✅ **Validação proativa**: Verificação de duplicidade antes de criar (SKUs, Estoque)
+- ✅ **Integração SignalR**: Atualizações em tempo real sem refresh da página
+
+#### Estrutura do Frontend
+
+```
+frontend/
+├── src/
+│   ├── components/          # Componentes reutilizáveis
+│   │   └── LoginModal.vue   # Modal de login
+│   ├── config/              # Configurações
+│   │   └── api.js           # URLs da API e SignalR
+│   ├── router/              # Configuração de rotas
+│   │   └── index.js         # Rotas e guards
+│   ├── stores/              # Pinia stores (state management)
+│   │   ├── auth.js          # Autenticação
+│   │   ├── orders.js        # Pedidos + SignalR
+│   │   ├── stock.js         # Estoque (produtos, SKUs, etc)
+│   │   ├── prices.js        # Tabelas e preços
+│   │   └── customers.js     # Clientes
+│   ├── views/               # Páginas/Views
+│   │   ├── Dashboard.vue    # Dashboard principal
+│   │   ├── Products.vue      # Gestão de produtos
+│   │   ├── StockOffices.vue # Gestão de filiais
+│   │   ├── Colors.vue       # Gestão de cores
+│   │   ├── Sizes.vue        # Gestão de tamanhos
+│   │   ├── Skus.vue         # Listagem de SKUs
+│   │   ├── CreateSku.vue    # Criação de SKU
+│   │   ├── Stocks.vue       # Listagem de estoques
+│   │   ├── CreateStock.vue  # Criação de estoque
+│   │   ├── PriceTables.vue  # Gestão de tabelas de preços
+│   │   ├── ProductPrices.vue # Gestão de preços
+│   │   ├── Customers.vue    # Gestão de clientes
+│   │   ├── CreateOrder.vue  # Criação de pedidos
+│   │   └── Register.vue     # Registro de usuários
+│   ├── App.vue              # Componente raiz
+│   └── main.js              # Entry point
+├── Dockerfile               # Dockerfile para produção
+├── nginx.conf               # Configuração Nginx
+├── package.json            # Dependências
+├── vite.config.js           # Configuração Vite
+└── index.html               # HTML principal
+```
+
+#### Execução do Frontend
+
+**Desenvolvimento:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Acesse: `http://localhost:3000`
+
+**Produção (Docker):**
+O frontend é servido via Nginx em container Docker. Veja seção "Setup e Execução" para instruções completas.
 
 ### Autenticação JWT
 - ✅ Sistema completo de registro e login
@@ -1488,12 +1833,77 @@ Todas as novas entidades seguem os mesmos padrões da entidade `Order`:
 
 ### SignalR
 - ✅ `OrderHub` para notificações em tempo real
-- ✅ Grupos por tenant
-- ✅ Notificações de criação e atualização de pedidos
+- ✅ Grupos por tenant (`JoinTenantGroup`, `LeaveTenantGroup`)
+- ✅ Notificações de criação e atualização de pedidos (`OrderCreated`, `OrderStatusUpdated`)
+- ✅ Autenticação JWT via query string (`access_token`)
+- ✅ Configuração de CORS para SignalR
+- ✅ Reconexão automática com retry exponencial
+- ✅ Integração frontend com `@microsoft/signalr` e atualização automática do Dashboard
 
 ### Feature Flags
 - ✅ `FeatureFlagsController` para gerenciar features
 - ✅ Permite deploys graduais
+
+### Sistema de Preços (DDD/Clean Architecture)
+
+- ✅ **PriceTable (Tabela de Preços)**
+  - Representa uma tabela de preços (ex: "Atacado", "Varejo", "Promoção")
+  - Validações de domínio: Nome obrigatório, TenantId obrigatório
+  - Métodos de domínio: `UpdateName()`, `UpdateDescription()`, `Activate()`, `Deactivate()`
+  - Índice único: `(Name, TenantId)` garante unicidade do nome por tenant
+  - Endpoints: `GET/POST/PUT/DELETE /api/pricetables`
+  - **Testes**: `PriceTableTests` (domínio), `CreatePriceTableCommandHandlerTests` (handler)
+
+- ✅ **ProductPrice (Preço de Produto)**
+  - Representa o preço de um produto em uma tabela de preços específica
+  - Validações de domínio: ProductId, PriceTableId, UnitPrice obrigatórios e maiores que zero
+  - Métodos de domínio: `UpdatePrice(unitPrice)`
+  - Índice único composto: `(ProductId, PriceTableId, TenantId)` garante um preço por produto/tabela/tenant
+  - Relacionamentos: Navegação para `Product` e `PriceTable`
+  - Endpoints: `GET/POST/PUT/DELETE /api/productprices`, `GET /api/productprices/product/{productId}/pricetable/{priceTableId}`
+  - **Testes**: `ProductPriceTests` (domínio), `CreateProductPriceCommandHandlerTests` (handler)
+
+### Sistema de Clientes (DDD/Clean Architecture)
+
+- ✅ **Customer (Cliente)**
+  - Representa um cliente do sistema
+  - Validações de domínio: Nome e Email obrigatórios, TenantId obrigatório
+  - Métodos de domínio: `UpdateName()`, `UpdateEmail()`, `UpdatePhone()`, `UpdateDocument()`
+  - Índice único: `(Email, TenantId)` garante unicidade do email por tenant
+  - Relacionamentos: Um cliente pode ter múltiplos pedidos (`Orders`)
+  - Endpoints: `GET/POST/PUT/DELETE /api/customers`
+  - **Testes**: `CreateCustomerCommandHandlerTests` (handler)
+
+### Correções e Melhorias Técnicas
+
+- ✅ **RowVersion em PostgreSQL**
+  - Correção do problema de `null value in column "RowVersion"` ao criar pedidos
+  - Implementação de triggers PostgreSQL para geração automática de `RowVersion`:
+    - Trigger `update_orders_row_version`: Atualiza `RowVersion` automaticamente no UPDATE
+    - Trigger `set_orders_row_version_on_insert`: Gera `RowVersion` automaticamente no INSERT
+  - Extensão `pgcrypto` habilitada para `gen_random_bytes(8)`
+  - Valor padrão configurado no EF Core: `HasDefaultValueSql("gen_random_bytes(8)")`
+
+- ✅ **SignalR - Atualizações em Tempo Real**
+  - Configuração completa de SignalR com autenticação JWT via query string
+  - Grupos por tenant para isolamento de notificações
+  - Frontend Vue.js integrado com `@microsoft/signalr`
+  - Atualização automática do Dashboard quando pedidos são criados ou atualizados
+  - Reconexão automática com retry exponencial
+  - Proxy Vite configurado para SignalR (WebSocket e LongPolling)
+
+- ✅ **Otimização de Queries**
+  - Refatoração de `GetOrdersQueryHandler` para usar `IQueryable` diretamente do banco
+  - Implementação de `GetQueryable()` em `IOrderRepository` e `OrderRepository`
+  - Queries executadas diretamente no banco de dados (não em memória)
+  - Melhor performance e suporte a paginação eficiente
+
+- ✅ **Frontend - Melhorias de UX**
+  - Validação proativa de SKUs e Estoque existentes antes de criar
+  - Mensagens de sucesso/erro melhoradas
+  - Design responsivo tipo e-commerce
+  - Menu hambúrguer para dispositivos móveis
+  - Interface moderna e intuitiva
 
 ---
 
@@ -1647,10 +2057,6 @@ O projeto possui uma cobertura abrangente de testes organizados seguindo a hiera
 
 ---
 
-## 📖 Questões Teóricas
-
-### 1. Cache Distribuído
-
 **Como implementaria um sistema de cache distribuído para melhorar a performance das consultas de pedidos?**
 
 **Resposta:**
@@ -1772,24 +2178,22 @@ Implementei retry policies usando **Polly**:
 
 ## 📊 Diagramas
 
-### Arquitetura
+O projeto inclui diagramas principais em formato PNG para visualização direta.
+
+### Diagrama de Arquitetura
 - **Arquivo**: `docs/architecture-diagram.png`
-
-### Sequência
-- **Arquivo**: `docs/sequence-diagrams.png`
-
-### Sistema de Estoque (Mermaid)
-- **Arquivo**: `docs/stock-management-diagrams.md`
 - **Conteúdo**:
-  - Diagrama de Entidades (ERD) do sistema de estoque
-  - Fluxo de criação de pedido com validação de estoque
-  - Fluxo de finalização de pedido com baixa de estoque
-  - Geração de códigos SKU e Barcode (EAN-13)
-  - Arquitetura de camadas do sistema de estoque
-  - Relacionamento Product-SKU-Stock
-  - Validação de formato EAN
+  - Visão geral da arquitetura Clean Architecture/DDD
+  - Camadas: Frontend, API, Application, Domain, Infrastructure, Messaging
+  - Componentes principais e suas interações
+  - Fluxo de dependências entre camadas
+  - Integrações externas (ViaCEP, Shipping API, Payment Gateway)
+  - Serviços de infraestrutura (PostgreSQL, Redis, RabbitMQ)
 
-**Nota**: Os diagramas em formato Mermaid podem ser visualizados em editores que suportam Mermaid (GitHub, GitLab, VS Code com extensão Mermaid, etc.)
+### Diagramas de Sequência
+- **Arquivo**: `docs/sequence-diagrams.png`
+- **Conteúdo**: Fluxos principais do sistema:
+  1. **Criação de Pedido**: Validação de estoque, criação de pedido, publicação de eventos, notificação SignalR
 ---
 
 ## 🚀 Deploy
@@ -1803,12 +2207,52 @@ docker run -p 5000:80 order-management-api
 
 ### Kubernetes
 
+O projeto inclui manifests Kubernetes completos para deploy em cluster:
+
+**1. Aplicar ConfigMap:**
 ```bash
 kubectl apply -f k8s/configmap.yaml
+```
+
+**2. Criar Secrets:**
+```bash
+# Copie o arquivo de exemplo e preencha com seus valores
+cp k8s/secret.yaml.example k8s/secret.yaml
+# Edite k8s/secret.yaml com seus valores reais
 kubectl apply -f k8s/secret.yaml
+```
+
+**3. Deploy da API:**
+```bash
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 ```
+
+**4. Deploy do Frontend:**
+```bash
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/frontend-service.yaml
+```
+
+**5. Verificar status:**
+```bash
+kubectl get pods
+kubectl get services
+kubectl get deployments
+```
+
+**Arquivos Kubernetes incluídos:**
+- `configmap.yaml` - Configurações da aplicação
+- `secret.yaml.example` - Template de secrets (JWT, senhas)
+- `deployment.yaml` - Deployment da API .NET
+- `service.yaml` - Service da API
+- `frontend-deployment.yaml` - Deployment do Frontend Vue
+- `frontend-service.yaml` - Service do Frontend
+
+**Nota**: Antes de aplicar os manifests, certifique-se de:
+1. Ter as imagens Docker disponíveis no registry (ou ajustar `imagePullPolicy` para `Never` se usar imagens locais)
+2. Configurar os secrets com valores reais
+3. Ajustar as configurações de conexão no ConfigMap conforme seu ambiente
 
 ---
 
@@ -2412,14 +2856,6 @@ services.AddDbContext<OrderManagementDbContext>(options =>
     - Documentar estratégia de migração
 
 ---
-
-## 👥 Contribuindo
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
 
 ---
 

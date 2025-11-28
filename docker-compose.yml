@@ -19,6 +19,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - order-management-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -38,6 +40,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - order-management-network
 
   redis:
     image: redis:7
@@ -54,6 +58,60 @@ services:
       retries: 5
       start_period: 10s
     command: redis-server --appendonly yes
+    networks:
+      - order-management-network
+
+  order-management-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: order-management-api
+    restart: unless-stopped
+    ports:
+      - "60545:8080"  # HTTPS port mapped to host
+      - "60546:8081"  # HTTP port mapped to host
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=OrderManagement;Username=postgres;Password=postgres;Port=5432
+      - ConnectionStrings__Redis=redis:6379
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - order-management-network
+
+  order-management-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: order-management-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"  # Frontend port mapped to host
+    depends_on:
+      - order-management-api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - order-management-network
 
 volumes:
   postgres_data:
@@ -61,5 +119,5 @@ volumes:
   redis_data:
 
 networks:
-  default:
-    name: order-management-network
+  order-management-network:
+    driver: bridge

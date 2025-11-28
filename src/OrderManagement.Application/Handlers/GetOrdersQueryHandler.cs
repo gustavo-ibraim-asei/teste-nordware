@@ -128,4 +128,3 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
         return result;
     }
 }
-

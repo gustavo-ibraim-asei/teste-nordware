@@ -33,7 +33,12 @@ spec:
             configMapKeyRef:
               name: order-management-config
               key: database-connection
-        - name: RABBITMQ_HOST
+        - name: ConnectionStrings__Redis
+          valueFrom:
+            configMapKeyRef:
+              name: order-management-config
+              key: redis-connection
+        - name: RabbitMQ__HostName
           valueFrom:
             configMapKeyRef:
               name: order-management-config

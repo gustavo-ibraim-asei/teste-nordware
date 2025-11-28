@@ -4,6 +4,7 @@ metadata:
   name: order-management-config
 data:
   database-connection: "Host=postgres-service;Database=OrderManagement;Username=postgres;Password=postgres;Port=5432"
+  redis-connection: "redis-service:6379"
   rabbitmq-host: "rabbitmq-service"
   app-name: "Order Management API"
   environment: "production"

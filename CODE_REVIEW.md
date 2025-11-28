@@ -1,6 +1,6 @@
-# Code Review - Análise do Código Problemático
+# Code Review - Análise de Código Problemático
 
-## 📋 Código Original (Problemático)
+## Código Original
 
 ```csharp
 public class OrderService
@@ -36,539 +36,433 @@ public class OrderService
 }
 ```
 
----
+## Problemas Identificados
 
-## 🔍 Problemas Identificados
+### 1. SQL Injection
 
-### 1. **Conexão Estática Compartilhada (Crítico)**
-- **Problema**: `public static SqlConnection conn` cria uma conexão compartilhada entre todas as instâncias
-- **Impacto**: 
-  - Race conditions em ambientes concorrentes
-  - Problemas de thread-safety
-  - Impossibilidade de testar adequadamente
-- **Violação**: Princípio de Dependency Inversion (SOLID)
-
-### 2. **SQL Injection (Crítico - Segurança)**
-- **Problema**: Concatenação de strings SQL: `"INSERT INTO Orders VALUES (" + customerId + ")"`
-- **Impacto**: Vulnerabilidade crítica de segurança
-- **Exemplo de ataque**: `customerId = "1); DROP TABLE Orders; --"`
-- **Violação**: OWASP Top 10 - Injection
-
-### 3. **Gerenciamento de Recursos Inadequado**
-- **Problema**: `conn.Open()` sem garantia de fechamento em caso de exceção
-- **Impacto**: 
-  - Vazamento de conexões (connection pool exhaustion)
-  - Degradação de performance
-  - Possível crash da aplicação
-- **Violação**: IDisposable pattern não aplicado
-
-### 4. **Ausência de Transações**
-- **Problema**: Múltiplas operações de banco sem transação
-- **Impacto**: 
-  - Inconsistência de dados (pedido criado sem itens em caso de falha)
-  - Violação de ACID
-- **Violação**: Princípio de Atomicidade
-
-### 5. **Thread.Sleep(100) - Performance**
-- **Problema**: Bloqueio desnecessário da thread
-- **Impacto**: 
-  - Degradação severa de performance
-  - Escalabilidade comprometida
-  - Em 100 pedidos = 10 segundos desperdiçados
-- **Violação**: Princípios de performance e escalabilidade
-
-### 6. **Tratamento de Exceções Inadequado**
-- **Problema**: 
-  - `catch(Exception ex)` muito genérico
-  - `Console.WriteLine` em produção
-  - Exceções são "engolidas" (swallowed)
-- **Impacto**: 
-  - Impossibilidade de debug
-  - Falhas silenciosas
-  - Dados inconsistentes sem conhecimento
-- **Violação**: Clean Code - Error Handling
-
-### 7. **Lógica de Negócio no Serviço de Acesso a Dados**
-- **Problema**: Mistura de responsabilidades (acesso a dados + lógica de negócio)
-- **Impacto**: 
-  - Código difícil de testar
-  - Violação de Single Responsibility Principle
-  - Impossibilidade de reutilização
-- **Violação**: SOLID - Single Responsibility Principle
-
-### 8. **SELECT MAX(Id) - Race Condition**
-- **Problema**: Uso de `SELECT MAX(Id)` para obter ID inserido
-- **Impacto**: 
-  - Race condition em ambientes concorrentes
-  - Possível obtenção de ID incorreto
-  - Não usa recursos nativos do banco (IDENTITY, SEQUENCE)
-- **Violação**: Thread-safety e consistência
-
-### 9. **Ausência de Validações**
-- **Problema**: Não valida parâmetros de entrada
-- **Impacto**: 
-  - Dados inválidos podem ser persistidos
-  - Erros em runtime ao invés de compile-time
-- **Violação**: Fail-fast principle
-
-### 10. **Código Síncrono**
-- **Problema**: Método síncrono bloqueia threads
-- **Impacto**: 
-  - Baixa escalabilidade
-  - Performance ruim em I/O
-  - Não aproveita async/await do .NET
-- **Violação**: Best practices de .NET moderno
-
-### 11. **Hardcoded Connection String**
-- **Problema**: String de conexão hardcoded
-- **Impacto**: 
-  - Impossibilidade de configurar por ambiente
-  - Dificuldade de manutenção
-- **Violação**: Configuration management
-
-### 12. **Uso de `var` sem Contexto**
-- **Problema**: Uso excessivo de `var` sem tipo explícito
-- **Impacto**: Reduz legibilidade (embora menor que os outros)
-
----
-
-## ✅ Código Refatorado (Baseado na Arquitetura Atual)
-
-A refatoração segue os padrões implementados no projeto atual: **Clean Architecture**, **DDD**, **CQRS**, **Repository Pattern** e **SOLID**.
-
-### Estrutura da Solução
-
-```
-OrderManagement.Domain/
-  ├── Entities/
-  │     └── Order.cs (entidade rica com lógica de negócio)
-  │     └── OrderItem.cs
-  ├── ValueObjects/
-  │     └── Address.cs
-  └── Interfaces/
-        └── IOrderRepository.cs
-
-OrderManagement.Application/
-  ├── Commands/
-  │     └── CreateOrderCommand.cs
-  ├── Handlers/
-  │     └── CreateOrderCommandHandler.cs
-  ├── DTOs/
-  │     └── CreateOrderDto.cs
-  └── Validators/
-        └── CreateOrderDtoValidator.cs
-
-OrderManagement.Infrastructure/
-  ├── Data/
-  │     └── OrderManagementDbContext.cs (EF Core)
-  └── Repositories/
-        └── OrderRepository.cs
-        └── UnitOfWork.cs
-```
-
-### 1. Entidade de Domínio (Order.cs)
+**Problema:**
+A concatenação direta de valores nas queries SQL permite SQL Injection, uma vulnerabilidade crítica de segurança.
 
 ```csharp
-using OrderManagement.Domain.Enums;
-using OrderManagement.Domain.Events;
-using OrderManagement.Domain.ValueObjects;
+var cmd = new SqlCommand("INSERT INTO Orders VALUES (" + customerId + ")", conn);
+var cmd3 = new SqlCommand("INSERT INTO OrderItems VALUES (" + orderId + "," + p + ")", conn);
+```
 
-namespace OrderManagement.Domain.Entities;
+**Exemplo de ataque:**
+Se `customerId` for `"1); DROP TABLE Orders; --"`, o SQL executado seria:
+```sql
+INSERT INTO Orders VALUES (1); DROP TABLE Orders; --)
+```
 
-public class Order : BaseEntity
+**Solução:**
+Usar parâmetros SQL para evitar SQL Injection:
+```csharp
+var cmd = new SqlCommand("INSERT INTO Orders (CustomerId) VALUES (@CustomerId)", conn);
+cmd.Parameters.AddWithValue("@CustomerId", customerId);
+```
+
+---
+
+### 2. Connection String Hardcoded
+
+**Problema:**
+A connection string está fixa no código, dificultando deploy em diferentes ambientes e expondo credenciais.
+
+```csharp
+public static SqlConnection conn = new SqlConnection("Server=.;Database=Orders;");
+```
+
+**Solução:**
+Configurar a connection string via `appsettings.json` e usar Dependency Injection:
+```csharp
+public class OrderService
 {
-    public int CustomerId { get; private set; }
-    public OrderStatus Status { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-    public Address ShippingAddress { get; private set; } = null!;
-    public decimal TotalAmount { get; private set; }
+    private readonly string _connectionString;
     
-    // Navigation properties
-    public virtual ICollection<OrderItem> Items { get; private set; } = new List<OrderItem>();
-
-    private Order() { } // EF Core
-
-    // Construtor com validações de negócio
-    public Order(int customerId, Address shippingAddress, List<OrderItem> items, string tenantId)
+    public OrderService(IConfiguration configuration)
     {
-        if (items == null || !items.Any())
-            throw new ArgumentException("Order must have at least one item", nameof(items));
-
-        if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
-
-        CustomerId = customerId;
-        ShippingAddress = shippingAddress ?? throw new ArgumentNullException(nameof(shippingAddress));
-        Status = OrderStatus.Pending;
-        CreatedAt = DateTime.UtcNow;
-        Items = items;
-        TenantId = tenantId;
-
-        CalculateTotal();
-
-        // Domain Event
-        AddDomainEvent(new OrderCreatedEvent(Id, CustomerId, TotalAmount));
-    }
-
-    private void CalculateTotal()
-    {
-        TotalAmount = Items.Sum(item => item.Quantity * item.UnitPrice);
+        _connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string não configurada");
     }
 }
 ```
 
-**Melhorias:**
-- ✅ Lógica de negócio encapsulada na entidade
-- ✅ Validações no construtor (fail-fast)
-- ✅ Domain Events para desacoplamento
-- ✅ Propriedades privadas com setters controlados
+---
 
-### 2. Command e Handler (CQRS)
+### 3. Thread.Sleep em Loop
+
+**Problema:**
+O `Thread.Sleep(100)` bloqueia a thread por 100ms a cada iteração, degradando significativamente a performance. Para 100 produtos, isso adiciona 10 segundos de espera desnecessária.
 
 ```csharp
-// CreateOrderCommand.cs
-namespace OrderManagement.Application.Commands;
-
-public class CreateOrderCommand : IRequest<OrderDto>
+foreach(var p in productIds)
 {
-    public CreateOrderDto Order { get; set; } = null!;
-}
-
-// CreateOrderCommandHandler.cs
-namespace OrderManagement.Application.Handlers;
-
-public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderDto>
-{
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
-    private readonly IDomainEventDispatcher _eventDispatcher;
-    private readonly IOrderFactory _orderFactory;
-    private readonly ITenantProvider _tenantProvider;
-
-    public CreateOrderCommandHandler(
-        IUnitOfWork unitOfWork, 
-        IMapper mapper, 
-        IDomainEventDispatcher eventDispatcher, 
-        IOrderFactory orderFactory, 
-        ITenantProvider tenantProvider)
-    {
-        _unitOfWork = unitOfWork;
-        _mapper = mapper;
-        _eventDispatcher = eventDispatcher;
-        _orderFactory = orderFactory;
-        _tenantProvider = tenantProvider;
-    }
-
-    public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
-    {
-        // Validação já feita pelo FluentValidation antes de chegar aqui
-        
-        string tenantId = _tenantProvider.GetCurrentTenant();
-        Domain.Entities.Order order = _orderFactory.CreateOrder(request.Order, tenantId);
-
-        // Persistência com transação automática (EF Core)
-        await _unitOfWork.Orders.AddAsync(order, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // Dispatch domain events (assíncrono)
-        await _eventDispatcher.DispatchAsync(order.DomainEvents, cancellationToken);
-        order.ClearDomainEvents();
-
-        return _mapper.Map<OrderDto>(order);
-    }
+    Thread.Sleep(100);  // Bloqueia thread desnecessariamente
+    var cmd3 = new SqlCommand("INSERT INTO OrderItems VALUES (" + orderId + "," + p + ")", conn);
+    cmd3.ExecuteNonQuery();
 }
 ```
 
-**Melhorias:**
-- ✅ Separação de responsabilidades (CQRS)
-- ✅ Dependency Injection
-- ✅ Async/await
-- ✅ CancellationToken para cancelamento
-- ✅ Transações automáticas via EF Core
-- ✅ Domain Events para desacoplamento
+**Solução:**
+Remover o `Thread.Sleep`. Se houver necessidade de controle de concorrência, usar transações adequadas ou implementar rate limiting apropriado.
 
-### 3. Validação com FluentValidation
+---
+
+### 4. Falta de Operações em Bulk
+
+**Problema:**
+Inserir itens um por um em um loop resulta em múltiplas round-trips ao banco de dados, aumentando latência e carga desnecessariamente.
+
+**Solução:**
+Usar bulk insert ou Table-Valued Parameters (TVP) para inserir todos os itens de uma vez:
+```csharp
+// Usando Table-Valued Parameter
+var itemsTable = new DataTable();
+itemsTable.Columns.Add("OrderId", typeof(int));
+itemsTable.Columns.Add("ProductId", typeof(int));
+
+foreach (var productId in productIds)
+{
+    var row = itemsTable.NewRow();
+    row["OrderId"] = orderId;
+    row["ProductId"] = productId;
+    itemsTable.Rows.Add(row);
+}
+
+var cmd = new SqlCommand("INSERT INTO OrderItems SELECT OrderId, ProductId FROM @Items", conn);
+var param = cmd.Parameters.AddWithValue("@Items", itemsTable);
+param.SqlDbType = SqlDbType.Structured;
+param.TypeName = "dbo.OrderItemType";
+cmd.ExecuteNonQuery();
+```
+
+---
+
+### 5. Connection Estática Compartilhada
+
+**Problema:**
+A conexão estática é compartilhada entre todas as threads/requests, causando problemas de concorrência, race conditions e possíveis deadlocks.
 
 ```csharp
-namespace OrderManagement.Application.Validators;
+public static SqlConnection conn = new SqlConnection(...);
+```
 
-public class CreateOrderDtoValidator : AbstractValidator<CreateOrderDto>
+**Solução:**
+Criar uma nova conexão por operação e usar `using` para garantir o dispose adequado:
+```csharp
+public async Task CreateOrderAsync(int customerId, List<int> productIds)
 {
-    public CreateOrderDtoValidator()
-    {
-        RuleFor(x => x.CustomerId)
-            .GreaterThan(0)
-            .WithMessage("CustomerId deve ser maior que zero");
-
-        RuleFor(x => x.Items)
-            .NotEmpty()
-            .WithMessage("Pedido deve ter pelo menos um item");
-
-        RuleForEach(x => x.Items)
-            .SetValidator(new OrderItemDtoValidator());
-    }
+    await using var connection = new SqlConnection(_connectionString);
+    await connection.OpenAsync();
+    // ... operações
 }
 ```
 
-**Melhorias:**
-- ✅ Validações declarativas e testáveis
-- ✅ Mensagens de erro claras
-- ✅ Validação antes de chegar no handler
+---
 
-### 4. Repository Pattern
+### 6. Falta de Transações
 
+**Problema:**
+As operações não estão dentro de uma transação, o que pode resultar em dados inconsistentes. Se falhar ao inserir um item, o pedido já foi criado, deixando dados órfãos no banco.
+
+**Solução:**
+Envolver todas as operações em uma transação para garantir atomicidade:
 ```csharp
-namespace OrderManagement.Domain.Interfaces;
-
-public interface IOrderRepository : IRepository<Order>
+await using var transaction = await connection.BeginTransactionAsync();
+try
 {
-    Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
-    Task<List<Order>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);
+    // Inserir pedido
+    // Inserir itens
+    await transaction.CommitAsync();
 }
-
-// Implementação
-namespace OrderManagement.Infrastructure.Repositories;
-
-public class OrderRepository : Repository<Order>, IOrderRepository
+catch
 {
-    public OrderRepository(OrderManagementDbContext context) : base(context)
-    {
-    }
-
-    public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await _context.Orders
-            .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
-    }
+    await transaction.RollbackAsync();
+    throw;
 }
 ```
 
-**Melhorias:**
-- ✅ Abstração de acesso a dados
-- ✅ Testável (mockável)
-- ✅ EF Core previne SQL Injection automaticamente
-- ✅ Queries tipadas e seguras
+---
 
-### 5. Unit of Work
+### 7. Race Condition com MAX(Id)
+
+**Problema:**
+Usar `SELECT MAX(Id)` para obter o ID do pedido criado pode resultar em race condition em cenários de alta concorrência, onde múltiplos pedidos podem receber o mesmo ID.
 
 ```csharp
-namespace OrderManagement.Infrastructure.Repositories;
+var cmd2 = new SqlCommand("SELECT MAX(Id) FROM Orders", conn);
+orderId = (int)cmd2.ExecuteScalar();
+```
 
-public class UnitOfWork : IUnitOfWork
+**Solução:**
+Usar `OUTPUT INSERTED.Id` para obter o ID gerado diretamente na inserção:
+```csharp
+var cmd = new SqlCommand(@"
+    INSERT INTO Orders (CustomerId, CreatedAt)
+    OUTPUT INSERTED.Id
+    VALUES (@CustomerId, @CreatedAt)", conn);
+cmd.Parameters.AddWithValue("@CustomerId", customerId);
+cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+orderId = (int)await cmd.ExecuteScalarAsync();
+```
+
+---
+
+### 8. Falta de Async/Await
+
+**Problema:**
+O método é síncrono, bloqueando threads desnecessariamente e reduzindo a capacidade de processamento concorrente da aplicação.
+
+**Solução:**
+Converter para métodos assíncronos:
+```csharp
+public async Task<int> CreateOrderAsync(int customerId, List<int> productIds, CancellationToken cancellationToken = default)
 {
-    private readonly OrderManagementDbContext _context;
+    await using var connection = new SqlConnection(_connectionString);
+    await connection.OpenAsync(cancellationToken);
+    // ... operações assíncronas
+}
+```
+
+---
+
+### 9. Tratamento de Exceções Genérico
+
+**Problema:**
+O tratamento de exceções é genérico e apenas loga no console, perdendo informações importantes e não diferenciando tipos de erro.
+
+```csharp
+catch(Exception ex)
+{
+    Console.WriteLine(ex.Message);
+}
+```
+
+**Solução:**
+Usar logging estruturado e tratar exceções específicas:
+```csharp
+catch (SqlException ex)
+{
+    _logger.LogError(ex, "Erro SQL ao criar pedido para cliente {CustomerId}", customerId);
+    throw new InvalidOperationException($"Erro ao criar pedido: {ex.Message}", ex);
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Erro inesperado ao criar pedido para cliente {CustomerId}", customerId);
+    throw;
+}
+```
+
+---
+
+### 10. Falta de Dispose/Using
+
+**Problema:**
+A conexão não é fechada adequadamente em caso de exceção, podendo resultar em conexões abertas e esgotamento do pool de conexões.
+
+**Solução:**
+Usar `using` statements para garantir dispose automático:
+```csharp
+await using var connection = new SqlConnection(_connectionString);
+await using var transaction = await connection.BeginTransactionAsync();
+// Recursos são automaticamente liberados ao sair do escopo
+```
+
+---
+
+### 11. Falta de Validações
+
+**Problema:**
+Não há validação de entrada, permitindo que dados inválidos sejam processados e resultem em erros em runtime.
+
+**Solução:**
+Adicionar validações no início do método:
+```csharp
+if (customerId <= 0)
+    throw new ArgumentException("CustomerId deve ser maior que zero", nameof(customerId));
+
+if (productIds == null || !productIds.Any())
+    throw new ArgumentException("Pedido deve conter pelo menos um produto", nameof(productIds));
+```
+
+---
+
+### 12. Violação de Princípios SOLID
+
+**Problema:**
+A classe mistura responsabilidades de acesso a dados e lógica de negócio, violando o Single Responsibility Principle e dificultando testes e manutenção.
+
+**Solução:**
+Separar responsabilidades usando Repository Pattern e Dependency Injection:
+```csharp
+public class OrderService
+{
     private readonly IOrderRepository _orderRepository;
-
-    public UnitOfWork(OrderManagementDbContext context, IOrderRepository orderRepository)
+    private readonly IOrderItemRepository _orderItemRepository;
+    
+    public OrderService(IOrderRepository orderRepository, IOrderItemRepository orderItemRepository)
     {
-        _context = context;
         _orderRepository = orderRepository;
-    }
-
-    public IOrderRepository Orders => _orderRepository;
-
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("O pedido foi modificado por outro processo. Por favor, atualize e tente novamente.");
-        }
+        _orderItemRepository = orderItemRepository;
     }
 }
 ```
 
-**Melhorias:**
-- ✅ Transações automáticas
-- ✅ Controle de concorrência otimista
-- ✅ Gerenciamento de recursos via EF Core
+---
 
-### 6. Configuração e Dependency Injection
+### 13. Falta de Logging Estruturado
 
+**Problema:**
+O uso de `Console.WriteLine` não é adequado para produção, não fornece contexto suficiente e não diferencia níveis de log.
+
+**Solução:**
+Implementar logging estruturado com bibliotecas como Serilog ou NLog:
 ```csharp
-// Program.cs
-builder.Services.AddDbContext<OrderManagementDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
-builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
+_logger.LogInformation("Criando pedido para cliente {CustomerId} com {ItemCount} itens", 
+    customerId, productIds.Count);
 ```
 
-**Melhorias:**
-- ✅ Connection string via configuração
-- ✅ Lifecycle management adequado (Scoped)
-- ✅ Registro automático de handlers
+---
 
-### 7. Tratamento de Exceções Global
+## Código Refatorado
 
 ```csharp
-// GlobalExceptionHandlerMiddleware.cs
-public class GlobalExceptionHandlerMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger;
+using System.Data;
+using System.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
-    public async Task InvokeAsync(HttpContext context)
+public class OrderService
+{
+    private readonly string _connectionString;
+    private readonly ILogger<OrderService> _logger;
+
+    public OrderService(IConfiguration configuration, ILogger<OrderService> logger)
     {
+        _connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string não configurada");
+        _logger = logger;
+    }
+
+    public async Task<int> CreateOrderAsync(int customerId, List<int> productIds, CancellationToken cancellationToken = default)
+    {
+        // Validações
+        if (customerId <= 0)
+            throw new ArgumentException("CustomerId deve ser maior que zero", nameof(customerId));
+        
+        if (productIds == null || !productIds.Any())
+            throw new ArgumentException("Pedido deve conter pelo menos um produto", nameof(productIds));
+
+        // Criar conexão (não estática, gerenciada por using)
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        // Transação explícita para garantir atomicidade
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
         try
         {
-            await _next(context);
+            int orderId;
+
+            // Inserir pedido com OUTPUT para obter ID gerado (evita race condition)
+            const string insertOrderSql = @"
+                INSERT INTO Orders (CustomerId, CreatedAt, Status)
+                OUTPUT INSERTED.Id
+                VALUES (@CustomerId, @CreatedAt, @Status)";
+
+            await using var orderCmd = new SqlCommand(insertOrderSql, connection, transaction);
+            orderCmd.Parameters.AddWithValue("@CustomerId", customerId);
+            orderCmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+            orderCmd.Parameters.AddWithValue("@Status", 1); // Pending
+
+            orderId = (int)await orderCmd.ExecuteScalarAsync(cancellationToken);
+
+            // Bulk insert de itens usando Table-Valued Parameter (TVP)
+            var itemsTable = new DataTable();
+            itemsTable.Columns.Add("OrderId", typeof(int));
+            itemsTable.Columns.Add("ProductId", typeof(int));
+
+            foreach (var productId in productIds)
+            {
+                var row = itemsTable.NewRow();
+                row["OrderId"] = orderId;
+                row["ProductId"] = productId;
+                itemsTable.Rows.Add(row);
+            }
+
+            const string insertItemsSql = @"
+                INSERT INTO OrderItems (OrderId, ProductId)
+                SELECT OrderId, ProductId
+                FROM @Items";
+
+            await using var itemsCmd = new SqlCommand(insertItemsSql, connection, transaction);
+            var itemsParam = itemsCmd.Parameters.AddWithValue("@Items", itemsTable);
+            itemsParam.SqlDbType = SqlDbType.Structured;
+            itemsParam.TypeName = "dbo.OrderItemType"; // Tipo de tabela no SQL Server
+
+            await itemsCmd.ExecuteNonQueryAsync(cancellationToken);
+
+            // Commit da transação
+            await transaction.CommitAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Pedido {OrderId} criado com sucesso para cliente {CustomerId} com {ItemCount} itens",
+                orderId, customerId, productIds.Count);
+
+            return orderId;
+        }
+        catch (SqlException ex)
+        {
+            // Rollback em caso de erro SQL
+            await transaction.RollbackAsync(cancellationToken);
+            
+            _logger.LogError(ex, 
+                "Erro SQL ao criar pedido para cliente {CustomerId}. Código de erro: {ErrorNumber}",
+                customerId, ex.Number);
+            
+            throw new InvalidOperationException($"Erro ao criar pedido: {ex.Message}", ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro não tratado ocorreu");
-            await HandleExceptionAsync(context, ex);
+            // Rollback em caso de qualquer outro erro
+            await transaction.RollbackAsync(cancellationToken);
+            
+            _logger.LogError(ex, "Erro inesperado ao criar pedido para cliente {CustomerId}", customerId);
+            throw;
         }
-    }
-
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
-    {
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = exception switch
-        {
-            KeyNotFoundException => StatusCodes.Status404NotFound,
-            ArgumentException => StatusCodes.Status400BadRequest,
-            InvalidOperationException => StatusCodes.Status400BadRequest,
-            _ => StatusCodes.Status500InternalServerError
-        };
-
-        return context.Response.WriteAsJsonAsync(new
-        {
-            error = exception.Message,
-            statusCode = context.Response.StatusCode
-        });
+        // Connection e Transaction são automaticamente fechadas pelo using
     }
 }
 ```
 
-**Melhorias:**
-- ✅ Tratamento centralizado
-- ✅ Logging estruturado
-- ✅ Respostas HTTP apropriadas
-- ✅ Não "engole" exceções
+## Melhorias Aplicadas
 
----
+1. **SQL Injection**: Eliminado usando parâmetros SQL (`@CustomerId`, `@ProductId`)
+2. **Connection String**: Configurada via `IConfiguration` e Dependency Injection
+3. **Thread.Sleep**: Removido completamente
+4. **Bulk Operations**: Implementado usando Table-Valued Parameters (TVP) para inserir todos os itens de uma vez
+5. **Connection**: Criada por método (não estática), gerenciada com `using`
+6. **Transações**: Explícitas com `BeginTransaction`, `Commit` e `Rollback`
+7. **Race Condition**: Resolvido usando `OUTPUT INSERTED.Id` ao invés de `MAX(Id)`
+8. **Async/Await**: Implementado corretamente em todos os métodos
+9. **Dispose**: Garantido com `using` statements
+10. **Logging**: Estruturado com `ILogger` e níveis apropriados
+11. **Validações**: Implementadas no início do método
+12. **Tratamento de Exceções**: Específico para `SqlException` e genérico para outras
+13. **SOLID**: Preparado para uso com Dependency Injection e separação de responsabilidades
 
-## 📊 Comparação: Antes vs Depois
+## Observações Adicionais
 
-| Aspecto | Código Original | Código Refatorado |
-|---------|----------------|-------------------|
-| **Segurança** | ❌ SQL Injection | ✅ EF Core (parametrizado) |
-| **Concorrência** | ❌ Race conditions | ✅ Transações + RowVersion |
-| **Testabilidade** | ❌ Impossível mockar | ✅ Interfaces + DI |
-| **Manutenibilidade** | ❌ Código monolítico | ✅ Separação de responsabilidades |
-| **Performance** | ❌ Thread.Sleep, síncrono | ✅ Async/await, paralelo |
-| **Escalabilidade** | ❌ Conexão estática | ✅ Connection pooling |
-| **Validações** | ❌ Ausentes | ✅ FluentValidation |
-| **Error Handling** | ❌ Console.WriteLine | ✅ Logging estruturado |
-| **Arquitetura** | ❌ Anêmica | ✅ DDD + Clean Architecture |
-| **SOLID** | ❌ Violado | ✅ Respeitado |
+### Performance
 
----
+O código refatorado é significativamente mais rápido:
+- **Código original**: Para 100 produtos, aproximadamente 10 segundos (100ms × 100 itens)
+- **Código refatorado**: Para 100 produtos, aproximadamente 50-150ms (bulk insert)
 
-## 🎯 Princípios Aplicados na Refatoração
+### Segurança
 
-### 1. **SOLID Principles**
-- ✅ **S**ingle Responsibility: Cada classe tem uma responsabilidade
-- ✅ **O**pen/Closed: Extensível via interfaces
-- ✅ **L**iskov Substitution: Interfaces bem definidas
-- ✅ **I**nterface Segregation: Interfaces específicas
-- ✅ **D**ependency Inversion: Dependências via interfaces
+O uso de parâmetros SQL elimina completamente o risco de SQL Injection, uma das vulnerabilidades mais críticas em aplicações web.
 
-### 2. **Clean Architecture**
-- ✅ Separação em camadas (Domain, Application, Infrastructure)
-- ✅ Dependências unidirecionais
-- ✅ Domain isolado e independente
+### Manutenibilidade
 
-### 3. **Domain-Driven Design (DDD)**
-- ✅ Entidades ricas com lógica de negócio
-- ✅ Value Objects (Address)
-- ✅ Domain Events
-- ✅ Aggregate Root (Order)
-
-### 4. **CQRS (Command Query Responsibility Segregation)**
-- ✅ Commands para escrita
-- ✅ Queries para leitura
-- ✅ MediatR como mediator
-
-### 5. **Repository Pattern + Unit of Work**
-- ✅ Abstração de acesso a dados
-- ✅ Transações coordenadas
-- ✅ Testabilidade
-
-### 6. **Best Practices**
-- ✅ Async/await para I/O
-- ✅ CancellationToken
-- ✅ Dependency Injection
-- ✅ Logging estruturado
-- ✅ Validações declarativas
-- ✅ Error handling centralizado
-
----
-
-## 🧪 Testabilidade
-
-O código refatorado é altamente testável:
-
-```csharp
-// Teste Unitário
-[Fact]
-public async Task Handle_ValidCommand_ReturnsOrderDto()
-{
-    // Arrange
-    var mockUnitOfWork = new Mock<IUnitOfWork>();
-    var mockMapper = new Mock<IMapper>();
-    // ... outros mocks
-    
-    var handler = new CreateOrderCommandHandler(
-        mockUnitOfWork.Object, 
-        mockMapper.Object, 
-        // ... outras dependências
-    );
-    
-    // Act
-    var result = await handler.Handle(command, CancellationToken.None);
-    
-    // Assert
-    Assert.NotNull(result);
-    mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-}
-```
-
----
-
-## 📈 Benefícios da Refatoração
-
-1. **Segurança**: Eliminação de SQL Injection
-2. **Confiabilidade**: Transações garantem consistência
-3. **Manutenibilidade**: Código organizado e testável
-4. **Escalabilidade**: Async/await e connection pooling
-5. **Testabilidade**: Interfaces permitem mocks
-6. **Observabilidade**: Logging estruturado
-7. **Flexibilidade**: Fácil adicionar novas funcionalidades
-8. **Performance**: Sem Thread.Sleep, operações assíncronas
-
----
-
-## 🚀 Conclusão
-
-A refatoração transforma um código com **12 problemas críticos** em uma solução robusta, segura, testável e escalável, seguindo as melhores práticas de desenvolvimento .NET moderno e padrões arquiteturais consagrados.
-
-O código refatorado está alinhado com a implementação atual do projeto, utilizando:
-- Clean Architecture / DDD
-- CQRS com MediatR
-- Repository Pattern + Unit of Work
-- EF Core (elimina SQL direto)
-- FluentValidation
-- Domain Events
-- Async/await
-- Dependency Injection
-- SOLID Principles
-
-**Resultado**: Código de produção, pronto para escalar e manter.
+A separação de responsabilidades e uso de Dependency Injection facilitam testes unitários e manutenção futura do código.
