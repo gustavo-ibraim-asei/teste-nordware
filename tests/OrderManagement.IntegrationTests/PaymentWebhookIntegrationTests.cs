@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using OrderManagement.API.Controllers;
 using OrderManagement.Application.DTOs;
 using OrderManagement.Application.DTOs.ValueObjects;
 using OrderManagement.Application.Interfaces;

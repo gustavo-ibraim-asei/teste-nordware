@@ -46,9 +46,9 @@ public class AuthIntegrationTests : IClassFixture<WebApplicationFactoryHelper>, 
         AuthResultDto? result = await response.Content.ReadFromJsonAsync<AuthResultDto>();
         result.Should().NotBeNull();
         result!.Token.Should().NotBeNullOrEmpty();
-        result.User.Should().NotBeNull();
-        result.User.Email.Should().Be("newuser@example.com");
-        result.User.UserName.Should().Be("newuser");
+        result.Username.Should().NotBeNull();
+        result.Email.Should().Be("newuser@example.com");
+        result.Username.Should().Be("newuser");
 
         // Verify in database
         Domain.Entities.User? userInDb = await _dbContext.Users
@@ -117,8 +117,8 @@ public class AuthIntegrationTests : IClassFixture<WebApplicationFactoryHelper>, 
         AuthResultDto? result = await response.Content.ReadFromJsonAsync<AuthResultDto>();
         result.Should().NotBeNull();
         result!.Token.Should().NotBeNullOrEmpty();
-        result.User.Should().NotBeNull();
-        result.User.Email.Should().Be("loginuser@example.com");
+        result.Username.Should().NotBeNull();
+        result.Email.Should().Be("loginuser@example.com");
     }
 
     [Fact]

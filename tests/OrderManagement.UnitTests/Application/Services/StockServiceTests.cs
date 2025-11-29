@@ -14,7 +14,7 @@ public class StockServiceTests
     private readonly Mock<IStockRepository> _stockRepositoryMock;
     private readonly Mock<ILogger<StockService>> _loggerMock;
     private readonly StockService _service;
-    private const string TenantId = "tenant1";
+    private const string TenantId = "default";
 
     public StockServiceTests()
     {
@@ -39,14 +39,14 @@ public class StockServiceTests
         StockOffice stockOffice = new StockOffice("Filial SP", "SP01", TenantId);
         Stock stock = new Stock(1, 1, 100, TenantId);
 
-        _skuRepositoryMock.Setup(r => r.GetByProductColorSizeAsync(1, 1, 2, It.IsAny<CancellationToken>()))
+        _skuRepositoryMock.Setup(r => r.GetByProductColorSizeAsync(1, 2, 3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(sku);
 
         _stockRepositoryMock.Setup(r => r.GetAvailableStockAsync(1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(stock);
 
         // Act
-        StockAvailabilityResult? result = await _service.CheckAvailabilityAsync(1, 1, 2, 10, CancellationToken.None);
+        StockAvailabilityResult? result = await _service.CheckAvailabilityAsync(1, 2, 3, 10, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
@@ -101,7 +101,7 @@ public class StockServiceTests
         Size size = new Size("M", "M", TenantId);
         Sku sku = new Sku(product, color, size, TenantId);
         StockOffice stockOffice = new StockOffice("Filial SP", "SP01", TenantId);
-        Stock stock = new Stock(1,1, 100, TenantId);
+        Stock stock = new Stock(1, 1, 100, TenantId);
 
         _stockRepositoryMock.Setup(r => r.GetBySkuAndOfficeAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(stock);

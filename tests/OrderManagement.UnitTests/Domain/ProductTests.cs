@@ -119,7 +119,7 @@ public class ProductTests
         // Act & Assert
         Action act = () => product.UpdateCode("");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Code cannot be empty*");
+            .WithMessage("O código não pode ser vazio*");
     }
 
     [Fact]

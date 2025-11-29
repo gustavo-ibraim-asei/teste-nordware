@@ -25,11 +25,37 @@ public class DatabaseIntegrationTests : IClassFixture<DatabaseFixture>, IDisposa
     {
         _fixture = fixture;
         _dbContext = fixture.DbContext;
-        
+
+        // Create repositories for all required UnitOfWork constructor parameters
+        var orderRepository = new OrderRepository(_dbContext);
+        var userRepository = new UserRepository(_dbContext);
+        var skuRepository = new SkuRepository(_dbContext);
+        var stockRepository = new StockRepository(_dbContext);
+        var productRepository = new Repository<Product>(_dbContext);
+        var stockOfficeRepository = new Repository<StockOffice>(_dbContext);
+        var colorRepository = new Repository<Color>(_dbContext);
+        var sizeRepository = new Repository<Size>(_dbContext);
+        var priceTableRepository = new PriceTableRepository(_dbContext);
+        var productPriceRepository = new ProductPriceRepository(_dbContext);
+        var customerRepository = new CustomerRepository(_dbContext);
+
         ServiceProvider serviceProvider = new ServiceCollection()
             .AddScoped<ITenantProvider, TenantProvider>()
-            .AddScoped<IUnitOfWork>(sp => new UnitOfWork(_dbContext))
-            .AddScoped<IOrderRepository>(sp => new OrderRepository(_dbContext))
+            .AddScoped<IUnitOfWork>(sp => new UnitOfWork(
+                _dbContext,
+                orderRepository,
+                userRepository,
+                skuRepository,
+                stockRepository,
+                productRepository,
+                stockOfficeRepository,
+                colorRepository,
+                sizeRepository,
+                priceTableRepository,
+                productPriceRepository,
+                customerRepository
+            ))
+            .AddScoped<IOrderRepository>(sp => orderRepository)
             .BuildServiceProvider();
 
         _unitOfWork = serviceProvider.GetRequiredService<IUnitOfWork>();

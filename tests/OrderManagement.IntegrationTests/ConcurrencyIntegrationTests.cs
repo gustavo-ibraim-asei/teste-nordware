@@ -25,14 +25,35 @@ public class ConcurrencyIntegrationTests : IClassFixture<DatabaseFixture>, IDisp
     {
         _fixture = fixture;
         _dbContext = fixture.DbContext;
-        
+
         ServiceProvider serviceProvider = new ServiceCollection()
             .AddScoped<ITenantProvider, TenantProvider>()
             .AddScoped<IOrderRepository>(sp => new OrderRepository(_dbContext))
             .AddScoped<IUserRepository>(sp => new UserRepository(_dbContext))
-            .AddScoped<IUnitOfWork>(sp => new UnitOfWork(_dbContext, 
-                sp.GetRequiredService<IOrderRepository>(), 
-                sp.GetRequiredService<IUserRepository>()))
+            // Add missing repository registrations for UnitOfWork constructor
+            .AddScoped<ISkuRepository>(sp => /* Provide ISkuRepository implementation here, e.g. new SkuRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IStockRepository>(sp => /* Provide IStockRepository implementation here, e.g. new StockRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IRepository<Product>>(sp => /* Provide IRepository<Product> implementation here, e.g. new ProductRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IRepository<StockOffice>>(sp => /* Provide IRepository<StockOffice> implementation here, e.g. new StockOfficeRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IRepository<Color>>(sp => /* Provide IRepository<Color> implementation here, e.g. new ColorRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IRepository<Size>>(sp => /* Provide IRepository<Size> implementation here, e.g. new SizeRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IPriceTableRepository>(sp => /* Provide IPriceTableRepository implementation here, e.g. new PriceTableRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IProductPriceRepository>(sp => /* Provide IProductPriceRepository implementation here, e.g. new ProductPriceRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<ICustomerRepository>(sp => /* Provide ICustomerRepository implementation here, e.g. new CustomerRepository(_dbContext) */ throw new NotImplementedException())
+            .AddScoped<IUnitOfWork>(sp => new UnitOfWork(
+                _dbContext,
+                sp.GetRequiredService<IOrderRepository>(),
+                sp.GetRequiredService<IUserRepository>(),
+                sp.GetRequiredService<ISkuRepository>(),
+                sp.GetRequiredService<IStockRepository>(),
+                sp.GetRequiredService<IRepository<Product>>(),
+                sp.GetRequiredService<IRepository<StockOffice>>(),
+                sp.GetRequiredService<IRepository<Color>>(),
+                sp.GetRequiredService<IRepository<Size>>(),
+                sp.GetRequiredService<IPriceTableRepository>(),
+                sp.GetRequiredService<IProductPriceRepository>(),
+                sp.GetRequiredService<ICustomerRepository>()
+            ))
             .BuildServiceProvider();
 
         _unitOfWork = serviceProvider.GetRequiredService<IUnitOfWork>();

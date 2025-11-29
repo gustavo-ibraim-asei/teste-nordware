@@ -64,6 +64,9 @@ public class CreateOrderCommandHandlerTests
                     new CreateOrderItemDto
                     {
                         ProductId = 1,
+                        ColorId = 2,
+                        SizeId = 3,
+                        SkuId = 1,
                         ProductName = "Product 1",
                         Quantity = 2,
                         UnitPrice = 29.99m

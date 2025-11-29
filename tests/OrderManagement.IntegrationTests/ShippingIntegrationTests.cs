@@ -27,7 +27,7 @@ public class ShippingIntegrationTests : IClassFixture<WebApplicationFactoryHelpe
         {
             ZipCode = "01310-100",
             OrderTotal = 100.00m,
-            Weight = 1.0m
+            TotalWeight = 1.0m
         };
 
         // Act
@@ -52,7 +52,7 @@ public class ShippingIntegrationTests : IClassFixture<WebApplicationFactoryHelpe
         {
             ZipCode = "01310-100",
             OrderTotal = 250.00m,
-            Weight = 1.0m
+            TotalWeight = 1.0m
         };
 
         // Act
@@ -78,7 +78,7 @@ public class ShippingIntegrationTests : IClassFixture<WebApplicationFactoryHelpe
         {
             ZipCode = "90000-000",
             OrderTotal = 100.00m,
-            Weight = 1.0m
+            TotalWeight = 1.0m
         };
 
         // Act
@@ -101,7 +101,7 @@ public class ShippingIntegrationTests : IClassFixture<WebApplicationFactoryHelpe
         {
             ZipCode = "01310-100",
             OrderTotal = 100.00m,
-            Weight = 1.0m
+            TotalWeight = 1.0m
         };
 
         // Act
@@ -129,7 +129,7 @@ public class ShippingIntegrationTests : IClassFixture<WebApplicationFactoryHelpe
         {
             ZipCode = "01310-100",
             OrderTotal = 100.00m,
-            Weight = 1.0m
+            TotalWeight = 1.0m
         };
 
         // Act
