@@ -990,24 +990,7 @@ X-Tenant-Id: tenant1
 ]
 ```
 
-{
-  "quantity": 10
-}
-```
-
-**Baixar Estoque:**
-```http
-POST /api/stocks/1/decrease
-Authorization: Bearer {seu_token_jwt}
-X-Tenant-Id: tenant1
-Content-Type: application/json
-
-{
-  "quantity": 5
-}
-```
-
-#### 6. Gestão de Clientes
+#### 7. Gestão de Clientes
 
 **Criar Cliente:**
 ```http
@@ -1072,7 +1055,7 @@ Authorization: Bearer {seu_token_jwt}
 X-Tenant-Id: tenant1
 ```
 
-#### 7. Gestão de Pedidos
+#### 8. Gestão de Pedidos
 
 **Criar Pedido:**
 ```http
@@ -1168,7 +1151,7 @@ Authorization: Bearer {seu_token_jwt}
 X-Tenant-Id: tenant1
 ```
 
-#### 8. Consulta de CEP
+#### 9. Consulta de CEP
 
 ```http
 GET /api/cep/01310100
@@ -1189,7 +1172,7 @@ X-Tenant-Id: tenant1
 }
 ```
 
-#### 9. Cálculo de Frete
+#### 10. Cálculo de Frete
 
 ```http
 POST /api/shipping/calculate
@@ -1238,7 +1221,7 @@ Content-Type: application/json
 }
 ```
 
-#### 10. Webhook de Pagamento
+#### 11. Webhook de Pagamento
 
 ```http
 POST /api/paymentwebhook/payment-update
@@ -1255,7 +1238,7 @@ Content-Type: application/json
 
 **Nota**: Este endpoint é público e não requer autenticação JWT, pois é chamado por gateways de pagamento externos.
 
-#### 11. Exemplo Completo: Fluxo de Criação de Pedido
+#### 12. Exemplo Completo: Fluxo de Criação de Pedido
 
 **Passo 1: Criar Produto**
 ```http
@@ -2053,120 +2036,6 @@ O projeto possui uma cobertura abrangente de testes organizados seguindo a hiera
   - Cobertura de casos de sucesso e falha
   - Testes de validação de regras de negócio
   - Testes de integração com banco de dados real (PostgreSQL via Docker)
-    
-
----
-
-**Como implementaria um sistema de cache distribuído para melhorar a performance das consultas de pedidos?**
-
-**Resposta:**
-
-Implementei cache distribuído usando Redis com as seguintes estratégias:
-
-1. **Cache de Consultas**: O `GetOrdersQueryHandler` utiliza `IDistributedCache` para cachear resultados de consultas de pedidos com chave baseada nos filtros aplicados.
-
-2. **Estratégias de Invalidação**:
-   - **TTL (Time To Live)**: Cache expira após 5 minutos
-   - **Invalidação por Evento**: Quando um pedido é criado/atualizado, o cache relacionado pode ser invalidado
-   - **Cache Keys Estruturadas**: `orders:{customerId}:{status}:{page}:{pageSize}` permite invalidação seletiva
-
-3. **Padrões Utilizados**:
-   - **Cache-Aside**: Aplicação verifica cache antes de consultar banco
-   - **Write-Through**:  implementado para atualizar cache junto com banco
-
-4. **Melhorias Futuras**:
-   - Implementar invalidação automática via eventos de domínio
-   - Cache de entidades individuais além de listagens
-   - Cache warming para consultas frequentes
-
-### 2. Consistência Eventual
-
-**Como garantiria a consistência eventual entre o serviço de pedidos e o serviço de estoque em uma arquitetura distribuída?**
-
-**Resposta:**
-
-A consistência eventual é garantida através de:
-
-1. **Event-Driven Architecture**: Utilizamos RabbitMQ para publicar eventos de mudança de status de pedidos. Quando um pedido é confirmado, o evento `OrderStatusChangedEvent` é publicado.
-
-2. **Saga Pattern**: Para operações complexas, implementaria uma saga que orquestra múltiplos serviços:
-   - Pedido criado → Reservar estoque → Confirmar pedido
-   - Se reserva falhar → Compensar (cancelar pedido)
-
-3. **Idempotência**: O `IdempotentMessageProcessor` garante que mensagens não sejam processadas duas vezes, evitando duplicação de atualizações de estoque.
-
-4. **Retry e DLQ**: Mensagens com falha são retentadas e, após esgotar tentativas, enviadas para Dead Letter Queue para análise manual.
-
-5. **Event Sourcing** (futuro): Poderia implementar Event Sourcing para rastrear todas as mudanças e permitir reconstrução do estado.
-
-### 3. Retry Resiliente
-
-**Como implementaria um mecanismo de retry resiliente para integrações externas que frequentemente falham?**
-
-**Resposta:**
-
-Implementei retry policies usando **Polly**:
-
-1. **Retry Policy**:
-   ```csharp
-   .WaitAndRetryAsync(
-       retryCount: 3,
-       sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
-   )
-   ```
-   - 3 tentativas com backoff exponencial (2s, 4s, 8s)
-
-2. **Circuit Breaker**:
-   ```csharp
-   .CircuitBreakerAsync(
-       handledEventsAllowedBeforeBreaking: 5,
-       durationOfBreak: TimeSpan.FromSeconds(30)
-   )
-   ```
-   - Abre circuito após 5 falhas consecutivas
-   - Mantém aberto por 30 segundos
-   - Evita sobrecarga de serviços externos
-
-3. **Trade-offs**:
-   - **Retry Imediato**: Baixa latência, mas pode sobrecarregar serviço
-   - **Backoff Exponencial**: Reduz carga, mas aumenta latência total
-   - **Circuit Breaker**: Protege serviço externo, mas pode causar falhas temporárias
-
-4. **Melhorias**:
-   - Jitter no backoff para evitar thundering herd
-   - Retry apenas para erros transientes (5xx, timeouts)
-   - Logging detalhado de tentativas
-
-### 4. Deadlocks em Alta Concorrência
-
-**Como abordaria o problema de deadlocks em um cenário de alta concorrência no processamento de pedidos?**
-
-**Resposta:**
-
-1. **Prevenção**:
-   - **Controle de Concorrência Otimista**: Implementado com `RowVersion` no Entity Framework
-   - **Ordem Consistente de Locks**: Sempre adquirir locks na mesma ordem
-   - **Timeouts**: Configurar timeouts em transações
-
-2. **Detecção**:
-   - **Logging**: Log detalhado de transações e locks
-   - **Monitoring**: Alertas quando transações excedem tempo esperado
-   - **Application Insights**: Rastreamento de dependências e locks
-
-3. **Resolução**:
-   - **Retry com Jitter**: Retry automático com backoff exponencial e jitter
-   - **Queue Pattern**: Processar pedidos em fila para evitar concorrência excessiva
-   - **Partitioning**: Dividir processamento por tenant ou região
-
-4. **Técnicas Específicas**:
-   - **NOLOCK** (não recomendado): Apenas para leituras não críticas
-   - **READ COMMITTED SNAPSHOT**: Reduz bloqueios de leitura
-   - **Row-Level Locking**: Usar locks granulares
-
-5. **Ferramentas**:
-   - **SQL Server Profiler**: Para detectar deadlocks
-   - **PostgreSQL Logging**: Configurar `log_lock_waits`
-   - **Distributed Tracing**: Jaeger ou Zipkin para rastrear locks distribuídos
 
 ---
 
@@ -2327,9 +2196,7 @@ kubectl get deployments
 
 ## 🚀 Estratégias de Escalabilidade (Monolito Modular)
 
-**Sim, o formato atual (monolito modular) permite escalabilidade significativa!** A arquitetura Clean Architecture/DDD já implementada facilita várias estratégias de escalabilidade sem necessidade de migração para microsserviços. Abaixo estão estratégias práticas e imediatamente aplicáveis:
-
-O projeto atual utiliza uma arquitetura **monolítica modular** (Clean Architecture/DDD), que pode ser escalada significativamente sem necessidade imediata de migração para microsserviços. Abaixo estão estratégias práticas para escalar mantendo a estrutura atual:
+O projeto atual utiliza uma arquitetura **monolítica modular** (Clean Architecture/DDD), que pode ser escalada significativamente sem necessidade imediata de migração para microsserviços. A arquitetura Clean Architecture/DDD já implementada facilita várias estratégias de escalabilidade. Abaixo estão estratégias práticas e imediatamente aplicáveis:
 
 ### 1. Escalabilidade Horizontal da Aplicação
 
@@ -2554,23 +2421,9 @@ A arquitetura monolítica modular atual **pode escalar significativamente** (sup
 - Houver necessidade clara de escalabilidade independente
 - Os benefícios superarem os custos de complexidade operacional
 
----
-
-## ✅ Estratégias Imediatas de Escalabilidade (Formato Atual)
-
-### Por que o formato atual já permite escalabilidade?
-
-A arquitetura **Clean Architecture/DDD** já implementada no projeto oferece várias vantagens para escalabilidade:
-
-1. **Separação de responsabilidades**: Camadas bem definidas facilitam otimização independente
-2. **CQRS com MediatR**: Queries e Commands separados permitem otimizações específicas
-3. **Repository Pattern**: Facilita implementação de cache, read replicas, sharding
-4. **Domain Events**: Comunicação assíncrona já implementada via RabbitMQ
-5. **Multitenancy**: Isolamento por tenant facilita sharding horizontal
-
 ### Estratégias Práticas e Imediatas
 
-#### 1. **Escalabilidade Horizontal (Já Possível)**
+#### 1. Escalabilidade Horizontal
 
 **O que fazer:**
 ```yaml
@@ -2592,7 +2445,7 @@ services:
 
 ---
 
-#### 2. **Read Replicas (Implementação Simples)**
+#### 2. Read Replicas
 
 **O que fazer:**
 ```csharp
@@ -2625,7 +2478,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
 
 ---
 
-#### 3. **Cache Distribuído (Já Parcialmente Implementado)**
+#### 3. Cache Distribuído
 
 **Expandir uso atual:**
 ```csharp
@@ -2662,7 +2515,7 @@ public async Task<ProductDto> Handle(GetProductByIdQuery request, CancellationTo
 
 ---
 
-#### 4. **Processamento Assíncrono (Já Implementado - Expandir)**
+#### 4. Processamento Assíncrono
 
 **O que já existe:**
 - ✅ Domain Events publicados via RabbitMQ
@@ -2704,7 +2557,7 @@ public async Task ConsumeAsync(OrderCreatedEvent message)
 
 ---
 
-#### 5. **Particionamento por Tenant (Já Implementado)**
+#### 5. Particionamento por Tenant
 
 **O que já existe:**
 - ✅ Multitenancy com `TenantId` em todas entidades
@@ -2731,7 +2584,7 @@ public class TenantAwareDbContext : OrderManagementDbContext
 
 ---
 
-#### 6. **Otimização de Queries (Implementação Imediata)**
+#### 6. Otimização de Queries
 
 **Adicionar índices estratégicos:**
 ```sql
@@ -2772,7 +2625,7 @@ var orders = await _context.Orders
 
 ---
 
-#### 7. **Connection Pooling Otimizado**
+#### 7. Connection Pooling Otimizado
 
 **Configuração atual pode ser otimizada:**
 ```csharp
