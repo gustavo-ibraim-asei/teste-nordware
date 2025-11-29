@@ -16,10 +16,10 @@ public class Color : BaseEntity
     public Color(string name, string? code, string tenantId)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         Name = name;
         Code = code;
@@ -29,7 +29,7 @@ public class Color : BaseEntity
     public void UpdateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         Name = name;
     }

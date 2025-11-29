@@ -29,10 +29,10 @@ public class Order : BaseEntity
     public Order(int customerId, Address shippingAddress, List<OrderItem> items, string tenantId)
     {
         if (items == null || !items.Any())
-            throw new ArgumentException("Order must have at least one item", nameof(items));
+            throw new ArgumentException("O pedido deve ter pelo menos um item", nameof(items));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         CustomerId = customerId;
         ShippingAddress = shippingAddress ?? throw new ArgumentNullException(nameof(shippingAddress));
@@ -49,10 +49,10 @@ public class Order : BaseEntity
     public void UpdateStatus(OrderStatus newStatus)
     {
         if (Status == OrderStatus.Cancelled)
-            throw new InvalidOperationException("Cannot update status of a cancelled order");
+            throw new InvalidOperationException("Não é possível atualizar o status de um pedido cancelado");
 
         if (Status == OrderStatus.Delivered && newStatus != OrderStatus.Cancelled)
-            throw new InvalidOperationException("Cannot change status of a delivered order");
+            throw new InvalidOperationException("Não é possível alterar o status de um pedido entregue");
 
         OrderStatus oldStatus = Status;
         Status = newStatus;
@@ -64,10 +64,10 @@ public class Order : BaseEntity
     public void Cancel(string? reason = null)
     {
         if (Status == OrderStatus.Delivered)
-            throw new InvalidOperationException("Cannot cancel a delivered order");
+            throw new InvalidOperationException("Não é possível cancelar um pedido entregue");
 
         if (Status == OrderStatus.Shipped)
-            throw new InvalidOperationException("Cannot cancel a shipped order. Contact support.");
+            throw new InvalidOperationException("Não é possível cancelar um pedido enviado. Entre em contato com o suporte.");
 
         OrderStatus oldStatus = Status;
         Status = OrderStatus.Cancelled;
@@ -79,7 +79,7 @@ public class Order : BaseEntity
     public void AddItem(OrderItem item)
     {
         if (Status != OrderStatus.Pending)
-            throw new InvalidOperationException("Can only add items to pending orders");
+            throw new InvalidOperationException("Só é possível adicionar itens a pedidos pendentes");
 
         Items.Add(item);
         CalculateTotal();
@@ -88,7 +88,7 @@ public class Order : BaseEntity
     public void UpdateShippingCost(decimal shippingCost)
     {
         if (shippingCost < 0)
-            throw new ArgumentException("Shipping cost cannot be negative", nameof(shippingCost));
+            throw new ArgumentException("O custo de frete não pode ser negativo", nameof(shippingCost));
 
         ShippingCost = shippingCost;
         CalculateTotal();
@@ -97,22 +97,22 @@ public class Order : BaseEntity
     public void SetShippingInfo(int carrierId, string carrierName, int shippingTypeId, string shippingType, decimal shippingCost, int estimatedDays)
     {
         if (carrierId <= 0)
-            throw new ArgumentException("Carrier ID must be greater than zero", nameof(carrierId));
+            throw new ArgumentException("O ID da transportadora deve ser maior que zero", nameof(carrierId));
 
         if (string.IsNullOrWhiteSpace(carrierName))
-            throw new ArgumentException("Carrier name cannot be empty", nameof(carrierName));
+            throw new ArgumentException("O nome da transportadora não pode ser vazio", nameof(carrierName));
 
         if (shippingTypeId <= 0)
-            throw new ArgumentException("Shipping type ID must be greater than zero", nameof(shippingTypeId));
+            throw new ArgumentException("O ID do tipo de frete deve ser maior que zero", nameof(shippingTypeId));
 
         if (string.IsNullOrWhiteSpace(shippingType))
-            throw new ArgumentException("Shipping type cannot be empty", nameof(shippingType));
+            throw new ArgumentException("O tipo de frete não pode ser vazio", nameof(shippingType));
 
         if (shippingCost < 0)
-            throw new ArgumentException("Shipping cost cannot be negative", nameof(shippingCost));
+            throw new ArgumentException("O custo de frete não pode ser negativo", nameof(shippingCost));
 
         if (estimatedDays < 0)
-            throw new ArgumentException("Estimated days cannot be negative", nameof(estimatedDays));
+            throw new ArgumentException("Os dias estimados não podem ser negativos", nameof(estimatedDays));
 
         CarrierId = carrierId;
         CarrierName = carrierName;
@@ -126,7 +126,7 @@ public class Order : BaseEntity
     public void SetTrackingNumber(string trackingNumber)
     {
         if (string.IsNullOrWhiteSpace(trackingNumber))
-            throw new ArgumentException("Tracking number cannot be empty", nameof(trackingNumber));
+            throw new ArgumentException("O número de rastreamento não pode ser vazio", nameof(trackingNumber));
 
         TrackingNumber = trackingNumber;
         UpdatedAt = DateTime.UtcNow;

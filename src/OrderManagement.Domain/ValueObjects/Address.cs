@@ -15,22 +15,22 @@ public class Address
     public Address(string street, string number, string neighborhood, string city, string state, string zipCode, string? complement = null)
     {
         if (string.IsNullOrWhiteSpace(street))
-            throw new ArgumentException("Street cannot be empty", nameof(street));
+            throw new ArgumentException("A rua não pode ser vazia", nameof(street));
 
         if (string.IsNullOrWhiteSpace(number))
-            throw new ArgumentException("Number cannot be empty", nameof(number));
+            throw new ArgumentException("O número não pode ser vazio", nameof(number));
 
         if (string.IsNullOrWhiteSpace(neighborhood))
-            throw new ArgumentException("Neighborhood cannot be empty", nameof(neighborhood));
+            throw new ArgumentException("O bairro não pode ser vazio", nameof(neighborhood));
 
         if (string.IsNullOrWhiteSpace(city))
-            throw new ArgumentException("City cannot be empty", nameof(city));
+            throw new ArgumentException("A cidade não pode ser vazia", nameof(city));
 
         if (string.IsNullOrWhiteSpace(state))
-            throw new ArgumentException("State cannot be empty", nameof(state));
+            throw new ArgumentException("O estado não pode ser vazio", nameof(state));
 
         if (string.IsNullOrWhiteSpace(zipCode))
-            throw new ArgumentException("ZipCode cannot be empty", nameof(zipCode));
+            throw new ArgumentException("O CEP não pode ser vazio", nameof(zipCode));
 
         Street = street;
         Number = number;

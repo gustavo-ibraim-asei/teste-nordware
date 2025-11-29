@@ -20,16 +20,16 @@ public class Stock : BaseEntity
     public Stock(int skuId, int stockOfficeId, int quantity, string tenantId)
     {
         if (skuId <= 0)
-            throw new ArgumentException("SkuId must be greater than zero", nameof(skuId));
+            throw new ArgumentException("O ID do SKU deve ser maior que zero", nameof(skuId));
 
         if (stockOfficeId <= 0)
-            throw new ArgumentException("StockOfficeId must be greater than zero", nameof(stockOfficeId));
+            throw new ArgumentException("O ID da filial deve ser maior que zero", nameof(stockOfficeId));
 
         if (quantity < 0)
-            throw new ArgumentException("Quantity cannot be negative", nameof(quantity));
+            throw new ArgumentException("A quantidade não pode ser negativa", nameof(quantity));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         SkuId = skuId;
         StockOfficeId = stockOfficeId;
@@ -50,10 +50,10 @@ public class Stock : BaseEntity
     public void Reserve(int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+            throw new ArgumentException("A quantidade deve ser maior que zero", nameof(quantity));
 
         if (AvailableQuantity < quantity)
-            throw new InvalidOperationException($"Insufficient stock. Available: {AvailableQuantity}, Requested: {quantity}");
+            throw new InvalidOperationException($"Estoque insuficiente. Disponível: {AvailableQuantity}, Solicitado: {quantity}");
 
         Reserved += quantity;
         UpdatedAt = DateTime.UtcNow;
@@ -65,10 +65,10 @@ public class Stock : BaseEntity
     public void ReleaseReservation(int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+            throw new ArgumentException("A quantidade deve ser maior que zero", nameof(quantity));
 
         if (Reserved < quantity)
-            throw new InvalidOperationException($"Cannot release more than reserved. Reserved: {Reserved}, Requested: {quantity}");
+            throw new InvalidOperationException($"Não é possível liberar mais do que foi reservado. Reservado: {Reserved}, Solicitado: {quantity}");
 
         Reserved -= quantity;
         UpdatedAt = DateTime.UtcNow;
@@ -80,10 +80,10 @@ public class Stock : BaseEntity
     public void Decrease(int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+            throw new ArgumentException("A quantidade deve ser maior que zero", nameof(quantity));
 
         if (AvailableQuantity < quantity)
-            throw new InvalidOperationException($"Insufficient stock. Available: {AvailableQuantity}, Requested: {quantity}");
+            throw new InvalidOperationException($"Estoque insuficiente. Disponível: {AvailableQuantity}, Solicitado: {quantity}");
 
         Quantity -= quantity;
         UpdatedAt = DateTime.UtcNow;
@@ -95,7 +95,7 @@ public class Stock : BaseEntity
     public void Increase(int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+            throw new ArgumentException("A quantidade deve ser maior que zero", nameof(quantity));
 
         Quantity += quantity;
         UpdatedAt = DateTime.UtcNow;
@@ -107,7 +107,7 @@ public class Stock : BaseEntity
     public void UpdateQuantity(int quantity)
     {
         if (quantity < 0)
-            throw new ArgumentException("Quantity cannot be negative", nameof(quantity));
+            throw new ArgumentException("A quantidade não pode ser negativa", nameof(quantity));
 
         Quantity = quantity;
         UpdatedAt = DateTime.UtcNow;

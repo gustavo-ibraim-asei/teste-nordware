@@ -14,7 +14,7 @@ public class TenantProvider : ITenantProvider
     public void SetTenant(string tenantId)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         _currentTenant = tenantId;
     }

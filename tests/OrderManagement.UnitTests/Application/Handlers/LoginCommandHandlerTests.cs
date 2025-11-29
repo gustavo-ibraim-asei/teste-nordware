@@ -66,8 +66,8 @@ public class LoginCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Token.Should().Be("test_token");
-        result.User.Should().NotBeNull();
-        result.User.Email.Should().Be("test@example.com");
+        result.Should().NotBeNull();
+        result.Email.Should().Be("test@example.com");
     }
 
     [Fact]

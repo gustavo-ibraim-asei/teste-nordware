@@ -45,7 +45,7 @@ public class OrdersController : ControllerBase
 
         // Send notification
         string tenantId = _tenantProvider.GetCurrentTenant();
-        _logger.LogInformation("Sending SignalR notification for order {OrderId} to tenant {TenantId}", order.Id, tenantId);
+        _logger.LogInformation("Enviando notificação SignalR para pedido {OrderId} ao tenant {TenantId}", order.Id, tenantId);
         await _notificationService.NotifyOrderCreatedAsync(order, tenantId, cancellationToken);
 
         return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
@@ -131,7 +131,7 @@ public class OrdersController : ControllerBase
 
             // Send notification
             string tenantId = _tenantProvider.GetCurrentTenant();
-            _logger.LogInformation("Sending SignalR notification for order status update {OrderId} to tenant {TenantId}", order.Id, tenantId);
+            _logger.LogInformation("Enviando notificação SignalR para atualização de status do pedido {OrderId} ao tenant {TenantId}", order.Id, tenantId);
             await _notificationService.NotifyOrderStatusUpdatedAsync(order, tenantId, cancellationToken);
 
             return Ok(order);

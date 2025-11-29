@@ -71,7 +71,7 @@ public class ProductPriceTests
         // Act & Assert
         Action act = () => new ProductPrice(product, priceTable, 99.99m, "");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("TenantId cannot be empty*");
+            .WithMessage("*TenantId não pode ser vazio*");
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class ProductPriceTests
         // Act & Assert
         Action act = () => new ProductPrice(product, priceTable, -10m, TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("UnitPrice cannot be negative*");
+            .WithMessage("*O preço unitário não pode ser negativo*");
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class ProductPriceTests
         // Act & Assert
         Action act = () => new ProductPrice(product, priceTable, 99.99m, TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Product must belong to the same tenant*");
+            .WithMessage("*O produto deve pertencer ao mesmo tenant*");
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class ProductPriceTests
         // Act & Assert
         Action act = () => new ProductPrice(product, priceTable, 99.99m, TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("PriceTable must belong to the same tenant*");
+            .WithMessage("*A tabela de preços deve pertencer ao mesmo tenant*");
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class ProductPriceTests
         // Act & Assert
         Action act = () => productPrice.UpdatePrice(-10m);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("UnitPrice cannot be negative*");
+            .WithMessage("*O preço unitário não pode ser negativo*");
     }
 
     [Fact]

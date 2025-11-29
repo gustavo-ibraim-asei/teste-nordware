@@ -61,19 +61,19 @@ public class CreateStockCommandHandlerTests
 
         Stock createdStock = new Stock(1, 1, 100, TenantId);
         Stock stockWithNavigation = new Stock(1, 1, 100, TenantId);
-        
+
         _unitOfWorkMock.Setup(u => u.Stocks.AddAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Stock s, CancellationToken ct) => s)
             .Callback<Stock, CancellationToken>((s, ct) => { createdStock = s; });
 
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
-            .Callback(() => { createdStock = new Stock(1, 1, 100, TenantId) { Id = 1 }; });
+            .Callback(() => { createdStock = new Stock(1, 1, 100, TenantId); });
 
         _unitOfWorkMock.Setup(u => u.Stocks.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((int id, CancellationToken ct) => 
+            .ReturnsAsync((int id, CancellationToken ct) =>
             {
-                var stock = new Stock(1, 1, 100, TenantId) { Id = id };
+                var stock = new Stock(1, 1, 100, TenantId);
                 return stock;
             });
 
@@ -97,7 +97,7 @@ public class CreateStockCommandHandlerTests
     public async Task Handle_WithExistingStock_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        Stock existingStock = new Stock(1, 1, 50, TenantId) { Id = 1 };
+        Stock existingStock = new Stock(1, 1, 50, TenantId);
 
         CreateStockCommand command = new CreateStockCommand
         {

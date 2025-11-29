@@ -26,7 +26,7 @@ public class StockOfficeTests
         // Arrange & Act & Assert
         Action act = () => new StockOffice("", "SP01", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name cannot be empty*");
+            .WithMessage("*O nome não pode ser vazio*");
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class StockOfficeTests
         // Arrange & Act & Assert
         Action act = () => new StockOffice("Filial SP", "SP01", "");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("TenantId cannot be empty*");
+            .WithMessage("*TenantId não pode ser vazio*");
     }
 
     [Fact]

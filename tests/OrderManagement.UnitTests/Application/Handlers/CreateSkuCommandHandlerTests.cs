@@ -67,7 +67,7 @@ public class CreateSkuCommandHandlerTests
             .ReturnsAsync((Sku?)null);
 
         _unitOfWorkMock.Setup(u => u.Skus.AddAsync(It.IsAny<Sku>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync((Sku sku, CancellationToken _) => sku);
 
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);

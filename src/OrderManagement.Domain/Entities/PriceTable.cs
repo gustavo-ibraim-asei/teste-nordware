@@ -19,13 +19,13 @@ public class PriceTable : BaseEntity
     public PriceTable(string name, string? description, string tenantId)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         if (name.Length > 200)
-            throw new ArgumentException("Name must not exceed 200 characters", nameof(name));
+            throw new ArgumentException("O nome não pode exceder 200 caracteres", nameof(name));
 
         Name = name;
         Description = description;
@@ -37,10 +37,10 @@ public class PriceTable : BaseEntity
     public void UpdateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (name.Length > 200)
-            throw new ArgumentException("Name must not exceed 200 characters", nameof(name));
+            throw new ArgumentException("O nome não pode exceder 200 caracteres", nameof(name));
 
         Name = name;
         UpdatedAt = DateTime.UtcNow;

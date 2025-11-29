@@ -27,7 +27,7 @@ public class OrderItemTests
         // Act & Assert
         Func<OrderItem> act = () => new OrderItem(0, "Product 1", 1, 29.99m);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Product ID must be greater than zero*");
+            .WithMessage("*O ID do produto deve ser maior que zero*");
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class OrderItemTests
         // Act & Assert
         Func<OrderItem> act = () => new OrderItem(1, "", 1, 29.99m);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Product name cannot be empty*");
+            .WithMessage("*O nome do produto não pode ser vazio*");
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class OrderItemTests
         // Act & Assert
         Func<OrderItem> act = () => new OrderItem(1, "Product 1", 0, 29.99m);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Quantity must be greater than zero*");
+            .WithMessage("*A quantidade deve ser maior que zero*");
     }
 
     [Fact]

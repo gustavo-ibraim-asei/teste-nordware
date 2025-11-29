@@ -42,7 +42,7 @@ public class OrderTests
         // Act & Assert
         Func<Order> act = () => new Order(customerId, address, items, "test-tenant");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Order must have at least one item*");
+            .WithMessage("*O pedido deve ter pelo menos um item*");
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class OrderTests
         // Act & Assert
         Func<object> act = () => { order.UpdateStatus(OrderStatus.Confirmed); return null; };
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Cannot change status of a delivered order*");
+            .WithMessage("*Não é possível alterar o status de um pedido entregue*");
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class OrderTests
         // Act & Assert
         Func<object> act = () => { order.Cancel(); return null; };
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Cannot cancel a delivered order*");
+            .WithMessage("*Não é possível cancelar um pedido entregue*");
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class OrderTests
         // Act & Assert
         Func<object> act = () => { order.Cancel(); return null; };
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Cannot cancel a shipped order*");
+            .WithMessage("*Não é possível cancelar um pedido enviado*");
     }
 
     [Fact]

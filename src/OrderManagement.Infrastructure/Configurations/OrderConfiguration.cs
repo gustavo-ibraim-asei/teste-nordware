@@ -56,7 +56,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .IsRequired()
             .HasMaxLength(100);
 
-        // Optimistic concurrency control
+        // Controle de concorrência otimista
         // Para PostgreSQL com Npgsql, precisamos configurar explicitamente
         builder.Property(o => o.RowVersion)
             .IsRowVersion()

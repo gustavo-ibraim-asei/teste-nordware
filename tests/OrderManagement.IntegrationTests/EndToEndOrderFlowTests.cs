@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderManagement.Application.DTOs;
 using OrderManagement.Application.DTOs.ValueObjects;
+using OrderManagement.Application.Interfaces;
 using OrderManagement.Domain.Enums;
 using OrderManagement.Infrastructure.Data;
 using OrderManagement.Infrastructure.Multitenancy;

@@ -70,7 +70,7 @@ public class UnitOfWork : IUnitOfWork
         }
         catch (DbUpdateConcurrencyException)
         {
-            // Handle optimistic concurrency conflict
+            // Tratar conflito de concorrência otimista
             throw new InvalidOperationException("O pedido foi modificado por outro processo. Por favor, atualize e tente novamente.");
         }
     }

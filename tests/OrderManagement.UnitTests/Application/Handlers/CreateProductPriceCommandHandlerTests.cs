@@ -69,7 +69,7 @@ public class CreateProductPriceCommandHandlerTests
         _unitOfWorkMock.Setup(u => u.Products).Returns(productRepoMock.Object);
         _unitOfWorkMock.Setup(u => u.PriceTables).Returns(priceTableRepoMock.Object);
         _unitOfWorkMock.Setup(u => u.ProductPrices.AddAsync(It.IsAny<ProductPrice>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync((ProductPrice)null!);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 

@@ -20,25 +20,25 @@ public class Customer : BaseEntity
     public Customer(string name, string email, string? phone, string? document, string tenantId)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Email cannot be empty", nameof(email));
+            throw new ArgumentException("O email não pode ser vazio", nameof(email));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         if (name.Length > 200)
-            throw new ArgumentException("Name must not exceed 200 characters", nameof(name));
+            throw new ArgumentException("O nome não pode exceder 200 caracteres", nameof(name));
 
         if (email.Length > 200)
-            throw new ArgumentException("Email must not exceed 200 characters", nameof(email));
+            throw new ArgumentException("O email não pode exceder 200 caracteres", nameof(email));
 
         if (phone != null && phone.Length > 20)
-            throw new ArgumentException("Phone must not exceed 20 characters", nameof(phone));
+            throw new ArgumentException("O telefone não pode exceder 20 caracteres", nameof(phone));
 
         if (document != null && document.Length > 20)
-            throw new ArgumentException("Document must not exceed 20 characters", nameof(document));
+            throw new ArgumentException("O documento não pode exceder 20 caracteres", nameof(document));
 
         Name = name;
         Email = email;
@@ -51,10 +51,10 @@ public class Customer : BaseEntity
     public void UpdateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (name.Length > 200)
-            throw new ArgumentException("Name must not exceed 200 characters", nameof(name));
+            throw new ArgumentException("O nome não pode exceder 200 caracteres", nameof(name));
 
         Name = name;
         UpdatedAt = DateTime.UtcNow;
@@ -63,10 +63,10 @@ public class Customer : BaseEntity
     public void UpdateEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Email cannot be empty", nameof(email));
+            throw new ArgumentException("O email não pode ser vazio", nameof(email));
 
         if (email.Length > 200)
-            throw new ArgumentException("Email must not exceed 200 characters", nameof(email));
+            throw new ArgumentException("O email não pode exceder 200 caracteres", nameof(email));
 
         Email = email;
         UpdatedAt = DateTime.UtcNow;
@@ -75,7 +75,7 @@ public class Customer : BaseEntity
     public void UpdatePhone(string? phone)
     {
         if (phone != null && phone.Length > 20)
-            throw new ArgumentException("Phone must not exceed 20 characters", nameof(phone));
+            throw new ArgumentException("O telefone não pode exceder 20 caracteres", nameof(phone));
 
         Phone = phone;
         UpdatedAt = DateTime.UtcNow;
@@ -84,7 +84,7 @@ public class Customer : BaseEntity
     public void UpdateDocument(string? document)
     {
         if (document != null && document.Length > 20)
-            throw new ArgumentException("Document must not exceed 20 characters", nameof(document));
+            throw new ArgumentException("O documento não pode exceder 20 caracteres", nameof(document));
 
         Document = document;
         UpdatedAt = DateTime.UtcNow;

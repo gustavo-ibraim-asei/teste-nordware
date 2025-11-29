@@ -26,16 +26,16 @@ public class ProductPrice : BaseEntity
             throw new ArgumentNullException(nameof(priceTable));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         if (product.TenantId != tenantId)
-            throw new ArgumentException("Product must belong to the same tenant", nameof(product));
+            throw new ArgumentException("O produto deve pertencer ao mesmo tenant", nameof(product));
 
         if (priceTable.TenantId != tenantId)
-            throw new ArgumentException("PriceTable must belong to the same tenant", nameof(priceTable));
+            throw new ArgumentException("A tabela de preços deve pertencer ao mesmo tenant", nameof(priceTable));
 
         if (unitPrice < 0)
-            throw new ArgumentException("UnitPrice cannot be negative", nameof(unitPrice));
+            throw new ArgumentException("O preço unitário não pode ser negativo", nameof(unitPrice));
 
         ProductId = product.Id;
         PriceTableId = priceTable.Id;
@@ -49,7 +49,7 @@ public class ProductPrice : BaseEntity
     public void UpdatePrice(decimal unitPrice)
     {
         if (unitPrice < 0)
-            throw new ArgumentException("UnitPrice cannot be negative", nameof(unitPrice));
+            throw new ArgumentException("O preço unitário não pode ser negativo", nameof(unitPrice));
 
         UnitPrice = unitPrice;
         UpdatedAt = DateTime.UtcNow;

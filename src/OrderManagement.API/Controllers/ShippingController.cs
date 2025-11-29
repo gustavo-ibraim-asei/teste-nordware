@@ -63,7 +63,7 @@ public class ShippingController : ControllerBase
     {
         // Este endpoint seria implementado para calcular frete baseado em um pedido existente
         // Por enquanto, retorna not implemented
-        return StatusCode(501, new { message = "Not implemented yet" });
+        return StatusCode(501, new { message = "Ainda não implementado" });
     }
 }
 

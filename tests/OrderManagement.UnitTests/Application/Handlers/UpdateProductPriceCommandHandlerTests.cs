@@ -46,11 +46,7 @@ public class UpdateProductPriceCommandHandlerTests
         Mock<IProductPriceRepository> productPriceRepoMock = new Mock<IProductPriceRepository>();
         productPriceRepoMock.SetupSequence(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(productPrice)
-            .ReturnsAsync((int id, CancellationToken ct) =>
-            {
-                ProductPrice updated = new ProductPrice(product, priceTable, 149.99m, TenantId) { Id = id };
-                return updated;
-            });
+            .ReturnsAsync((ProductPrice?)null);
 
         _unitOfWorkMock.Setup(u => u.ProductPrices).Returns(productPriceRepoMock.Object);
         _unitOfWorkMock.Setup(u => u.ProductPrices.UpdateAsync(It.IsAny<ProductPrice>(), It.IsAny<CancellationToken>()))

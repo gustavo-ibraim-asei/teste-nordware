@@ -4,9 +4,9 @@ namespace OrderManagement.Domain.Entities;
 
 public abstract class BaseEntity
 {
-    public int Id { get; protected set; }
+    public int Id { get; set; }
     public string TenantId { get; protected set; } = string.Empty;
-    
+
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 

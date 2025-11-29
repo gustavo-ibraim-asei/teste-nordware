@@ -28,7 +28,7 @@ public class PriceTableTests
         // Arrange & Act & Assert
         Action act = () => new PriceTable("", "Descrição", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name cannot be empty*");
+            .WithMessage("*O nome não pode ser vazio*");
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class PriceTableTests
         // Arrange & Act & Assert
         Action act = () => new PriceTable("Tabela", "Descrição", "");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("TenantId cannot be empty*");
+            .WithMessage("*TenantId não pode ser vazio*");
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class PriceTableTests
         // Act & Assert
         Action act = () => new PriceTable(longName, "Descrição", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name must not exceed 200 characters*");
+            .WithMessage("*O nome não pode exceder 200 caracteres*");
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class PriceTableTests
         // Act & Assert
         Action act = () => priceTable.UpdateName("");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name cannot be empty*");
+            .WithMessage("*O nome não pode ser vazio*");
     }
 
     [Fact]

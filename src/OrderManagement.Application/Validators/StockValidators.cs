@@ -111,15 +111,15 @@ public class CreateSkuDtoValidator : AbstractValidator<CreateSkuDto>
     {
         RuleFor(x => x.ProductId)
             .GreaterThan(0)
-            .WithMessage("Product ID deve ser maior que zero");
+            .WithMessage("O ID do produto deve ser maior que zero");
 
         RuleFor(x => x.ColorId)
             .GreaterThan(0)
-            .WithMessage("Color ID deve ser maior que zero");
+            .WithMessage("O ID da cor deve ser maior que zero");
 
         RuleFor(x => x.SizeId)
             .GreaterThan(0)
-            .WithMessage("Size ID deve ser maior que zero");
+            .WithMessage("O ID do tamanho deve ser maior que zero");
     }
 }
 
@@ -140,11 +140,11 @@ public class CreateStockDtoValidator : AbstractValidator<CreateStockDto>
     {
         RuleFor(x => x.SkuId)
             .GreaterThan(0)
-            .WithMessage("SKU ID deve ser maior que zero");
+            .WithMessage("O ID do SKU deve ser maior que zero");
 
         RuleFor(x => x.StockOfficeId)
             .GreaterThan(0)
-            .WithMessage("Stock Office ID deve ser maior que zero");
+            .WithMessage("O ID da filial deve ser maior que zero");
 
         RuleFor(x => x.Quantity)
             .GreaterThanOrEqualTo(0)

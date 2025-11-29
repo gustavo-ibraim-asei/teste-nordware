@@ -6,6 +6,7 @@ using OrderManagement.Application.DTOs;
 using OrderManagement.Application.Handlers;
 using OrderManagement.Application.Interfaces;
 using OrderManagement.Application.Mappings;
+using OrderManagement.Application.Services;
 using OrderManagement.Domain.Entities;
 using OrderManagement.Domain.Interfaces;
 using OrderManagement.Domain.ValueObjects;
@@ -18,12 +19,22 @@ public class CreateOrderCommandHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly IMapper _mapper;
     private readonly Mock<IMessagePublisher> _messagePublisherMock;
+    private readonly Mock<IDomainEventDispatcher> _eventDispatcherMock;
+    private readonly Mock<IOrderFactory> _orderFactoryMock;
+    private readonly Mock<ITenantProvider> _tenantProviderMock;
+    private readonly Mock<IShippingCalculationService> _shippingServiceMock;
+    private readonly Mock<IStockService> _stockServiceMock;
     private readonly CreateOrderCommandHandler _handler;
 
     public CreateOrderCommandHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _messagePublisherMock = new Mock<IMessagePublisher>();
+        _eventDispatcherMock = new Mock<IDomainEventDispatcher>();
+        _orderFactoryMock = new Mock<IOrderFactory>();
+        _tenantProviderMock = new Mock<ITenantProvider>();
+        _shippingServiceMock = new Mock<IShippingCalculationService>();
+        _stockServiceMock = new Mock<IStockService>();
 
         MapperConfiguration mapperConfig = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = mapperConfig.CreateMapper();
@@ -31,7 +42,12 @@ public class CreateOrderCommandHandlerTests
         _handler = new CreateOrderCommandHandler(
             _unitOfWorkMock.Object,
             _mapper,
-            _messagePublisherMock.Object);
+            _eventDispatcherMock.Object,
+            _orderFactoryMock.Object,
+            _tenantProviderMock.Object,
+            _shippingServiceMock.Object,
+            _stockServiceMock.Object
+        );
     }
 
     [Fact]
@@ -53,7 +69,7 @@ public class CreateOrderCommandHandlerTests
                         UnitPrice = 29.99m
                     }
                 },
-                ShippingAddress = new DTOs.ValueObjects.AddressDto
+                ShippingAddress = new OrderManagement.Application.DTOs.ValueObjects.AddressDto
                 {
                     Street = "Rua Teste",
                     Number = "123",

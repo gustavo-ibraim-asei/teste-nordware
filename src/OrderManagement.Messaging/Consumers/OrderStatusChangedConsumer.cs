@@ -119,7 +119,7 @@ public class OrderStatusChangedConsumer : BackgroundService
     private async Task ProcessStatusChangedAsync(OrderStatusChangedEvent statusChangedEvent, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Processando evento de mudança de status do pedido. OrderId: {OrderId}, OldStatus: {OldStatus}, NewStatus: {NewStatus}",
+            "Processando evento de mudança de status do pedido. OrderId: {OrderId}, Status Anterior: {OldStatus}, Novo Status: {NewStatus}",
             statusChangedEvent.OrderId,
             statusChangedEvent.OldStatus,
             statusChangedEvent.NewStatus);

@@ -66,9 +66,9 @@ public class RegisterUserCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Token.Should().NotBeNullOrEmpty();
-        result.User.Should().NotBeNull();
-        result.User.Email.Should().Be("test@example.com");
-        result.User.UserName.Should().Be("testuser");
+        result.Should().NotBeNull();
+        result.Email.Should().Be("test@example.com");
+        result.Username.Should().Be("testuser");
         _unitOfWorkMock.Verify(u => u.Users.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

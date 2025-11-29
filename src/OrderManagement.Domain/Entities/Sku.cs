@@ -33,16 +33,16 @@ public class Sku : BaseEntity
             throw new ArgumentNullException(nameof(size));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         if (product.TenantId != tenantId)
-            throw new ArgumentException("Product must belong to the same tenant", nameof(product));
+            throw new ArgumentException("O produto deve pertencer ao mesmo tenant", nameof(product));
 
         if (color.TenantId != tenantId)
-            throw new ArgumentException("Color must belong to the same tenant", nameof(color));
+            throw new ArgumentException("A cor deve pertencer ao mesmo tenant", nameof(color));
 
         if (size.TenantId != tenantId)
-            throw new ArgumentException("Size must belong to the same tenant", nameof(size));
+            throw new ArgumentException("O tamanho deve pertencer ao mesmo tenant", nameof(size));
 
         ProductId = product.Id;
         ColorId = color.Id;
@@ -72,11 +72,11 @@ public class Sku : BaseEntity
         if (barcode != null)
         {
             if (barcode.Length > 13)
-                throw new ArgumentException("Barcode must not exceed 13 characters for EAN format", nameof(barcode));
+                throw new ArgumentException("O código de barras não pode exceder 13 caracteres para o formato EAN", nameof(barcode));
 
             // Validar formato EAN se fornecido
             if (!Helpers.EanGenerator.IsValidEan(barcode))
-                throw new ArgumentException("Barcode must be a valid EAN-8 or EAN-13 format", nameof(barcode));
+                throw new ArgumentException("O código de barras deve estar em um formato EAN-8 ou EAN-13 válido", nameof(barcode));
         }
 
         Barcode = barcode;

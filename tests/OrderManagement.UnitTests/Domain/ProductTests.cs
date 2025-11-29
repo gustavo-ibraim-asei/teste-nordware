@@ -27,7 +27,7 @@ public class ProductTests
         // Arrange & Act & Assert
         Action act = () => new Product("", "CAM001", "Descrição", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name cannot be empty*");
+            .WithMessage("*O nome não pode ser vazio*");
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class ProductTests
         // Arrange & Act & Assert
         Action act = () => new Product("Camiseta", "", "Descrição", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Code cannot be empty*");
+            .WithMessage("*O código não pode ser vazio*");
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class ProductTests
         // Arrange & Act & Assert
         Action act = () => new Product("Camiseta", "CAM001", "Descrição", "");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("TenantId cannot be empty*");
+            .WithMessage("*TenantId não pode ser vazio*");
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class ProductTests
         // Act & Assert
         Action act = () => new Product(longName, "CAM001", "Descrição", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name must not exceed 200 characters*");
+            .WithMessage("*O nome não pode exceder 200 caracteres*");
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class ProductTests
         // Act & Assert
         Action act = () => new Product("Camiseta", longCode, "Descrição", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Code must not exceed 50 characters*");
+            .WithMessage("*O código não pode exceder 50 caracteres*");
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class ProductTests
         // Act & Assert
         Action act = () => product.UpdateName("");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name cannot be empty*");
+            .WithMessage("*O nome não pode ser vazio*");
     }
 
     [Fact]

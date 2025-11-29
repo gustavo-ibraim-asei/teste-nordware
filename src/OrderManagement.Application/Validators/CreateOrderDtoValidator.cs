@@ -10,18 +10,18 @@ public class CreateOrderDtoValidator : AbstractValidator<CreateOrderDto>
     {
         RuleFor(x => x.CustomerId)
             .GreaterThan(0)
-            .WithMessage("Customer ID must be greater than zero");
+            .WithMessage("O ID do cliente deve ser maior que zero");
 
         RuleFor(x => x.Items)
             .NotEmpty()
-            .WithMessage("Order must have at least one item");
+            .WithMessage("O pedido deve ter pelo menos um item");
 
         RuleForEach(x => x.Items)
             .SetValidator(new CreateOrderItemDtoValidator());
 
         RuleFor(x => x.ShippingAddress)
             .NotNull()
-            .WithMessage("Shipping address is required")
+            .WithMessage("O endereço de entrega é obrigatório")
             .SetValidator(new AddressDtoValidator());
     }
 }
@@ -32,27 +32,27 @@ public class CreateOrderItemDtoValidator : AbstractValidator<CreateOrderItemDto>
     {
         RuleFor(x => x.ProductId)
             .GreaterThan(0)
-            .WithMessage("Product ID must be greater than zero");
+            .WithMessage("O ID do produto deve ser maior que zero");
 
         RuleFor(x => x.ColorId)
             .GreaterThan(0)
-            .WithMessage("Color ID must be greater than zero");
+            .WithMessage("O ID da cor deve ser maior que zero");
 
         RuleFor(x => x.SizeId)
             .GreaterThan(0)
-            .WithMessage("Size ID must be greater than zero");
+            .WithMessage("O ID do tamanho deve ser maior que zero");
 
         RuleFor(x => x.ProductName)
             .NotEmpty()
-            .WithMessage("Product name is required");
+            .WithMessage("O nome do produto é obrigatório");
 
         RuleFor(x => x.Quantity)
             .GreaterThan(0)
-            .WithMessage("Quantity must be greater than zero");
+            .WithMessage("A quantidade deve ser maior que zero");
 
         RuleFor(x => x.UnitPrice)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Unit price cannot be negative");
+            .WithMessage("O preço unitário não pode ser negativo");
     }
 }
 
@@ -62,29 +62,29 @@ public class AddressDtoValidator : AbstractValidator<AddressDto>
     {
         RuleFor(x => x.Street)
             .NotEmpty()
-            .WithMessage("Street is required");
+            .WithMessage("A rua é obrigatória");
 
         RuleFor(x => x.Number)
             .NotEmpty()
-            .WithMessage("Number is required");
+            .WithMessage("O número é obrigatório");
 
         RuleFor(x => x.Neighborhood)
             .NotEmpty()
-            .WithMessage("Neighborhood is required");
+            .WithMessage("O bairro é obrigatório");
 
         RuleFor(x => x.City)
             .NotEmpty()
-            .WithMessage("City is required");
+            .WithMessage("A cidade é obrigatória");
 
         RuleFor(x => x.State)
             .NotEmpty()
             .Length(2)
-            .WithMessage("State must be 2 characters");
+            .WithMessage("O estado deve ter 2 caracteres");
 
         RuleFor(x => x.ZipCode)
             .NotEmpty()
             .Matches(@"^\d{5}-?\d{3}$")
-            .WithMessage("ZipCode must be in format 00000-000");
+            .WithMessage("O CEP deve estar no formato 00000-000");
     }
 }
 

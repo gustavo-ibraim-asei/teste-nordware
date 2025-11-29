@@ -54,7 +54,7 @@ public class CreatePriceTableCommandHandlerTests
 
         _unitOfWorkMock.Setup(u => u.PriceTables).Returns(priceTableRepoMock.Object);
         _unitOfWorkMock.Setup(u => u.PriceTables.AddAsync(It.IsAny<PriceTable>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync((PriceTable pt, CancellationToken _) => pt);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 

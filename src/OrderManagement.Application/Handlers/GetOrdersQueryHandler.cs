@@ -27,7 +27,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
 
     public async Task<PagedResultDto<OrderDto>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
     {
-        // Try to get from cache if available (com tratamento de erro)
+        // Tentar obter do cache se disponível (com tratamento de erro)
         if (_cache != null)
         {
             try
@@ -47,10 +47,10 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             }
         }
 
-        // Get IQueryable from repository to query directly in the database
+        // Obter IQueryable do repositório para consultar diretamente no banco de dados
         IQueryable<Domain.Entities.Order> query = _unitOfWork.Orders.GetQueryable();
 
-        // Apply filters
+        // Aplicar filtros
         if (request.Query.CustomerId.HasValue)
         {
             query = query.Where(o => o.CustomerId == request.Query.CustomerId.Value);
@@ -71,10 +71,10 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             query = query.Where(o => o.CreatedAt <= request.Query.EndDate.Value);
         }
 
-        // Get total count before pagination
+        // Obter contagem total antes da paginação
         int totalCount = await query.CountAsync(cancellationToken);
 
-        // Apply sorting
+        // Aplicar ordenação
         query = request.Query.SortBy?.ToLower() switch
         {
             "createdat" => request.Query.SortDescending
@@ -89,7 +89,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             _ => query.OrderByDescending(o => o.CreatedAt)
         };
 
-        // Apply pagination
+        // Aplicar paginação
         List<Domain.Entities.Order> items = await query
             .Skip((request.Query.Page - 1) * request.Query.PageSize)
             .Take(request.Query.PageSize)
@@ -103,7 +103,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
             PageSize = request.Query.PageSize
         };
 
-        // Cache result if cache is available (com tratamento de erro)
+        // Armazenar resultado no cache se disponível (com tratamento de erro)
         if (_cache != null)
         {
             try

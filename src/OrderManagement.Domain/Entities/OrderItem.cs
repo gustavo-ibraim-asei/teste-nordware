@@ -21,16 +21,16 @@ public class OrderItem : BaseEntity
     public OrderItem(int productId, string productName, int quantity, decimal unitPrice)
     {
         if (productId <= 0)
-            throw new ArgumentException("Product ID must be greater than zero", nameof(productId));
+            throw new ArgumentException("O ID do produto deve ser maior que zero", nameof(productId));
 
         if (string.IsNullOrWhiteSpace(productName))
-            throw new ArgumentException("Product name cannot be empty", nameof(productName));
+            throw new ArgumentException("O nome do produto não pode ser vazio", nameof(productName));
 
         if (quantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+            throw new ArgumentException("A quantidade deve ser maior que zero", nameof(quantity));
 
         if (unitPrice < 0)
-            throw new ArgumentException("Unit price cannot be negative", nameof(unitPrice));
+            throw new ArgumentException("O preço unitário não pode ser negativo", nameof(unitPrice));
 
         ProductId = productId;
         ProductName = productName;
@@ -42,7 +42,7 @@ public class OrderItem : BaseEntity
     public void UpdateQuantity(int newQuantity)
     {
         if (newQuantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero", nameof(newQuantity));
+            throw new ArgumentException("A quantidade deve ser maior que zero", nameof(newQuantity));
 
         Quantity = newQuantity;
         Subtotal = Quantity * UnitPrice;
@@ -51,10 +51,10 @@ public class OrderItem : BaseEntity
     public void SetStockInfo(int skuId, int stockOfficeId)
     {
         if (skuId <= 0)
-            throw new ArgumentException("SkuId must be greater than zero", nameof(skuId));
+            throw new ArgumentException("O ID do SKU deve ser maior que zero", nameof(skuId));
 
         if (stockOfficeId <= 0)
-            throw new ArgumentException("StockOfficeId must be greater than zero", nameof(stockOfficeId));
+            throw new ArgumentException("O ID da filial deve ser maior que zero", nameof(stockOfficeId));
 
         SkuId = skuId;
         StockOfficeId = stockOfficeId;

@@ -26,7 +26,7 @@ public class ColorTests
         // Arrange & Act & Assert
         Action act = () => new Color("", "BLK", TenantId);
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Name cannot be empty*");
+            .WithMessage("*O nome não pode ser vazio*");
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class ColorTests
         // Arrange & Act & Assert
         Action act = () => new Color("Preto", "BLK", "");
         act.Should().Throw<ArgumentException>()
-            .WithMessage("TenantId cannot be empty*");
+            .WithMessage("*TenantId não pode ser vazio*");
     }
 
     [Fact]

@@ -16,22 +16,22 @@ public class ShippingOption
     public ShippingOption(int carrierId, string carrierName, int shippingTypeId, string shippingType, decimal price, int estimatedDays, bool isFree = false, bool isSameDay = false)
     {
         if (carrierId <= 0)
-            throw new ArgumentException("Carrier ID must be greater than zero", nameof(carrierId));
+            throw new ArgumentException("O ID da transportadora deve ser maior que zero", nameof(carrierId));
 
         if (string.IsNullOrWhiteSpace(carrierName))
-            throw new ArgumentException("Carrier name cannot be empty", nameof(carrierName));
+            throw new ArgumentException("O nome da transportadora não pode ser vazio", nameof(carrierName));
 
         if (shippingTypeId <= 0)
-            throw new ArgumentException("Shipping type ID must be greater than zero", nameof(shippingTypeId));
+            throw new ArgumentException("O ID do tipo de frete deve ser maior que zero", nameof(shippingTypeId));
 
         if (string.IsNullOrWhiteSpace(shippingType))
-            throw new ArgumentException("Shipping type cannot be empty", nameof(shippingType));
+            throw new ArgumentException("O tipo de frete não pode ser vazio", nameof(shippingType));
 
         if (price < 0)
-            throw new ArgumentException("Price cannot be negative", nameof(price));
+            throw new ArgumentException("O preço não pode ser negativo", nameof(price));
 
         if (estimatedDays < 0)
-            throw new ArgumentException("Estimated days cannot be negative", nameof(estimatedDays));
+            throw new ArgumentException("Os dias estimados não podem ser negativos", nameof(estimatedDays));
 
         CarrierId = carrierId;
         CarrierName = carrierName;

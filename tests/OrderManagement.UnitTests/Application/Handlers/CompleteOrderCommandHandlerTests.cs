@@ -20,6 +20,7 @@ public class CompleteOrderCommandHandlerTests
     private readonly IMapper _mapper;
     private readonly Mock<IDomainEventDispatcher> _eventDispatcherMock;
     private readonly Mock<IShippingCalculationService> _shippingServiceMock;
+    private readonly Mock<IStockService> _stockServiceMock;
     private readonly CompleteOrderCommandHandler _handler;
 
     public CompleteOrderCommandHandlerTests()
@@ -27,6 +28,7 @@ public class CompleteOrderCommandHandlerTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _eventDispatcherMock = new Mock<IDomainEventDispatcher>();
         _shippingServiceMock = new Mock<IShippingCalculationService>();
+        _stockServiceMock = new Mock<IStockService>();
 
         MapperConfiguration mapperConfig = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = mapperConfig.CreateMapper();
@@ -35,7 +37,8 @@ public class CompleteOrderCommandHandlerTests
             _unitOfWorkMock.Object,
             _mapper,
             _eventDispatcherMock.Object,
-            _shippingServiceMock.Object);
+            _shippingServiceMock.Object,
+            _stockServiceMock.Object);
     }
 
     [Fact]

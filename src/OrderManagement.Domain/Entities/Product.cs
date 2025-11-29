@@ -20,19 +20,19 @@ public class Product : BaseEntity
     public Product(string name, string code, string? description, string tenantId)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (string.IsNullOrWhiteSpace(code))
-            throw new ArgumentException("Code cannot be empty", nameof(code));
+            throw new ArgumentException("O código não pode ser vazio", nameof(code));
 
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
 
         if (name.Length > 200)
-            throw new ArgumentException("Name must not exceed 200 characters", nameof(name));
+            throw new ArgumentException("O nome não pode exceder 200 caracteres", nameof(name));
 
         if (code.Length > 50)
-            throw new ArgumentException("Code must not exceed 50 characters", nameof(code));
+            throw new ArgumentException("O código não pode exceder 50 caracteres", nameof(code));
 
         Name = name;
         Code = code;
@@ -44,10 +44,10 @@ public class Product : BaseEntity
     public void UpdateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be empty", nameof(name));
+            throw new ArgumentException("O nome não pode ser vazio", nameof(name));
 
         if (name.Length > 200)
-            throw new ArgumentException("Name must not exceed 200 characters", nameof(name));
+            throw new ArgumentException("O nome não pode exceder 200 caracteres", nameof(name));
 
         Name = name;
     }
@@ -55,10 +55,10 @@ public class Product : BaseEntity
     public void UpdateCode(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
-            throw new ArgumentException("Code cannot be empty", nameof(code));
+            throw new ArgumentException("O código não pode ser vazio", nameof(code));
 
         if (code.Length > 50)
-            throw new ArgumentException("Code must not exceed 50 characters", nameof(code));
+            throw new ArgumentException("O código não pode exceder 50 caracteres", nameof(code));
 
         Code = code;
     }
